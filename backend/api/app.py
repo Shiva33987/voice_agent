@@ -58,22 +58,36 @@ mcp_app = mcp.http_app(path="/", stateless_http=True)
 async def lifespan(app: FastAPI):
     async with mcp_app.lifespan(app):
         # warmup arq pool
-        await get_arq_redis()
+        try:
+            await get_arq_redis()
+        except Exception as e:
+            logger.warning(
+                f"Could not connect to Redis for ARQ tasks: {e}. Background queue will retry on demand."
+            )
 
         # Pre-register all org-specific Langfuse exporters so they're ready
         # before any pipeline runs, without per-call DB lookups.
-        await load_all_org_langfuse_credentials()
+        try:
+            await load_all_org_langfuse_credentials()
+        except Exception as e:
+            logger.warning(f"Could not load Langfuse credentials on startup: {e}")
 
         # Start cross-worker sync manager so config changes propagate to all workers
-        sync_manager = WorkerSyncManager(REDIS_URL)
-        sync_manager.register(
-            WorkerSyncEventType.LANGFUSE_CREDENTIALS, handle_langfuse_sync
-        )
-        sync_manager.register(
-            WorkerSyncEventType.RECORDINGS, handle_recording_cache_sync
-        )
-        await sync_manager.start()
-        set_worker_sync_manager(sync_manager)
+        sync_manager: WorkerSyncManager | None = None
+        try:
+            sync_manager = WorkerSyncManager(REDIS_URL)
+            sync_manager.register(
+                WorkerSyncEventType.LANGFUSE_CREDENTIALS, handle_langfuse_sync
+            )
+            sync_manager.register(
+                WorkerSyncEventType.RECORDINGS, handle_recording_cache_sync
+            )
+            await sync_manager.start()
+            set_worker_sync_manager(sync_manager)
+        except Exception as e:
+            logger.warning(
+                f"WorkerSyncManager not started (Redis unavailable at {REDIS_URL}): {e}"
+            )
 
         from api.services.observability import loop_exceptions, loop_lag, metrics
         from api.services.observability.call_events import (
@@ -100,14 +114,18 @@ async def lifespan(app: FastAPI):
 
             await finish_streaming_text_chat_turns()
             await call_event_delivery.shutdown()
-            try:
-                await sync_manager.stop()
-            finally:
+            if sync_manager is not None:
                 try:
-                    await close_speech_cache()
-                finally:
-                    await loop_lag.stop()
-                    metrics.stop()
+                    await sync_manager.stop()
+                except Exception:
+                    pass
+            try:
+                await close_speech_cache()
+            except Exception:
+                pass
+            finally:
+                loop_lag.stop()
+                metrics.stop()
 
 
 app = FastAPI(
