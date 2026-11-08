@@ -6,20 +6,27 @@ WORKDIR /app
 RUN apt-get update && apt-get install -y --no-install-recommends \
     git \
     build-essential \
+    curl \
     && rm -rf /var/lib/apt/lists/*
 
+# Install uv for fast, reliable, conflict-free dependency resolution
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /usr/local/bin/
+
 ENV VIRTUAL_ENV=/opt/venv \
-    PATH=/opt/venv/bin:$PATH
+    PATH=/opt/venv/bin:$PATH \
+    SETUPTOOLS_SCM_PRETEND_VERSION="1.0.1"
+
 RUN python -m venv "$VIRTUAL_ENV"
 
 # Install API requirements
 COPY api/requirements.txt /tmp/requirements.txt
-RUN pip install --no-cache-dir -r /tmp/requirements.txt
+RUN uv pip install --no-cache -r /tmp/requirements.txt
 
 # Install self-contained Pipecat voice framework
 COPY pipecat /tmp/pipecat
-RUN pip install --no-cache-dir '/tmp/pipecat[cartesia,deepgram,openai,elevenlabs,groq,google,azure,sarvam,soundfile,silero,webrtc,speechmatics,openrouter]' \
- && pip install --no-cache-dir opencv-python-headless
+RUN uv pip install --no-cache '/tmp/pipecat[cartesia,deepgram,openai,elevenlabs,groq,google,azure,sarvam,soundfile,silero,webrtc,speechmatics,openrouter,camb,mcp,inworld,smallest,aws-nova-sonic]' \
+ && uv pip uninstall opencv-python 2>/dev/null || true \
+ && uv pip install --no-cache opencv-python-headless
 
 # Final Runtime Image
 FROM python:3.12-slim AS runner

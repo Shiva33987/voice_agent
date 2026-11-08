@@ -19,7 +19,8 @@ COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /usr/local/bin/
 # and console-scripts inside the venv reference the correct runtime location
 # after COPY --from.
 ENV VIRTUAL_ENV=/opt/venv \
-    PATH=/opt/venv/bin:$PATH
+    PATH=/opt/venv/bin:$PATH \
+    SETUPTOOLS_SCM_PRETEND_VERSION="1.0.1"
 RUN python -m venv "$VIRTUAL_ENV"
 
 # Layer 1: API deps. Cache invalidates only when requirements.txt changes.
@@ -126,7 +127,8 @@ COPY --from=builder /opt/venv /opt/venv
 
 # Activate the venv for subsequent RUN/CMD layers.
 ENV VIRTUAL_ENV=/opt/venv \
-    PATH=/opt/venv/bin:$PATH
+    PATH=/opt/venv/bin:$PATH \
+    SETUPTOOLS_SCM_PRETEND_VERSION="1.0.1"
 
 # Set Python to not generate .pyc files in runtime
 ENV PYTHONDONTWRITEBYTECODE=1
