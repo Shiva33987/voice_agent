@@ -274,7 +274,6 @@ export function WorkflowTable({
                                             variant={showArchived ? "default" : "outline"}
                                             size="sm"
                                             onClick={() => handleArchiveToggle(workflow.id, workflow.status)}
-                                            disabled={loadingWorkflowId === workflow.id || isPending}
                                             disabled={loadingWorkflowId === workflow.id || deletingWorkflowId === workflow.id || isPending}
                                             className="flex items-center gap-2"
                                         >

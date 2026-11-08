@@ -66,7 +66,7 @@ export function LeadFormsProvider({ children }: { children: ReactNode }) {
     // unset — an accepted trade for a server-authoritative, cross-device gate.
     (async () => {
       try {
-        const res = await getWorkflowCountApiV1WorkflowCountGet();
+        await getWorkflowCountApiV1WorkflowCountGet();
         // Re-check the flag after the await: a completion elsewhere (another
         // tab) may have stamped it while the count was in flight.
         // Disabled onboarding modal completely

@@ -36,6 +36,22 @@ interface AiToolGeneratorDialogProps {
   onToolCreated?: (tool: ToolResponse) => void;
 }
 
+interface GeneratedToolPreview {
+  name?: string;
+  description?: string;
+  definition?: {
+    config?: {
+      method?: string;
+      url?: string;
+      parameters?: Array<{
+        name: string;
+        type?: string;
+        description?: string;
+      }>;
+    };
+  };
+}
+
 export function AiToolGeneratorDialog({
   open,
   onOpenChange,
@@ -45,7 +61,7 @@ export function AiToolGeneratorDialog({
   const [requirement, setRequirement] = useState(initialPrompt);
   const [baseUrl, setBaseUrl] = useState("http://localhost:8080");
   const [isGenerating, setIsGenerating] = useState(false);
-  const [generatedPreview, setGeneratedPreview] = useState<any | null>(null);
+  const [generatedPreview, setGeneratedPreview] = useState<GeneratedToolPreview | null>(null);
   const [createdTool, setCreatedTool] = useState<ToolResponse | null>(null);
 
   useEffect(() => {
@@ -91,8 +107,9 @@ export function AiToolGeneratorDialog({
       } else {
         toast.success("Tool schema generated! Review and click Save.");
       }
-    } catch (err: any) {
-      toast.error(err.message || "Failed to generate tool");
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Failed to generate tool";
+      toast.error(message);
     } finally {
       setIsGenerating(false);
     }
@@ -118,8 +135,9 @@ export function AiToolGeneratorDialog({
       if (onToolCreated) {
         onToolCreated(tool);
       }
-    } catch (err: any) {
-      toast.error(err.message || "Could not save tool");
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Could not save tool";
+      toast.error(message);
     } finally {
       setIsGenerating(false);
     }
@@ -226,7 +244,7 @@ export function AiToolGeneratorDialog({
                     Extracted Parameters ({generatedPreview.definition.config.parameters.length})
                   </Label>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                    {generatedPreview.definition.config.parameters.map((p: any) => (
+                    {generatedPreview.definition.config.parameters.map((p) => (
                       <div
                         key={p.name}
                         className="p-2 bg-slate-950/80 rounded-md border border-slate-800 text-xs flex flex-col justify-between"

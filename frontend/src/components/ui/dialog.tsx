@@ -55,7 +55,7 @@ function DialogContent({
     <DialogPortal data-slot="dialog-portal">
       <DialogOverlay />
       <DialogPrimitive.Content
-        onOpenAutoFocus={(e) => {
+        onOpenAutoFocus={() => {
           if (document.activeElement instanceof HTMLElement) {
             document.activeElement.blur();
           }
