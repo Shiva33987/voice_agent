@@ -76,13 +76,20 @@ BACKEND_API_ENDPOINT = (
 )
 UI_APP_URL = os.getenv("UI_APP_URL", "http://localhost:3010")
 
-_raw_db_url = os.getenv(
-    "DATABASE_URL", "postgresql+asyncpg://postgres:postgres@localhost:5433/dograh"
+_raw_db_url = (
+    os.getenv("DATABASE_URL")
+    or os.getenv("INTERNAL_DATABASE_URL")
+    or os.getenv("POSTGRES_URL")
+    or os.getenv("POSTGRESQL_URL")
+    or os.getenv("DB_URL")
+    or "postgresql+asyncpg://postgres:postgres@localhost:5433/dograh"
 )
 if _raw_db_url.startswith("postgres://"):
     _raw_db_url = _raw_db_url.replace("postgres://", "postgresql+asyncpg://", 1)
 elif _raw_db_url.startswith("postgresql://") and not _raw_db_url.startswith("postgresql+asyncpg://"):
     _raw_db_url = _raw_db_url.replace("postgresql://", "postgresql+asyncpg://", 1)
+if "sslmode=require" in _raw_db_url:
+    _raw_db_url = _raw_db_url.replace("sslmode=require", "ssl=require")
 DATABASE_URL = _raw_db_url
 
 REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379/0")

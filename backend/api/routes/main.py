@@ -93,6 +93,8 @@ class HealthResponse(BaseModel):
     # be baked into the browser bundle at build time. Both are public values.
     stack_project_id: str | None = None
     stack_publishable_client_key: str | None = None
+    db_configured: bool = False
+    db_host: str | None = None
 
 
 @router.get("/health", response_model=HealthResponse)
@@ -101,6 +103,7 @@ async def health() -> HealthResponse:
         APP_VERSION,
         AUTH_PROVIDER,
         BACKEND_API_ENDPOINT,
+        DATABASE_URL,
         DEPLOYMENT_MODE,
         ENABLE_COTURN,
         ENABLE_SIGNUP,
@@ -123,11 +126,28 @@ async def health() -> HealthResponse:
         else None
     )
     is_stack = AUTH_PROVIDER == "stack"
+    
+    # Check whether real database is configured
+    is_db_custom = "localhost:5433" not in DATABASE_URL
+    import urllib.parse
+    parsed = urllib.parse.urlparse(DATABASE_URL.replace("postgresql+asyncpg://", "http://"))
+    db_host_masked = parsed.hostname
+
     return HealthResponse(
         status="ok",
         version=APP_VERSION,
         backend_api_endpoint=BACKEND_API_ENDPOINT,
         tunnel_url=tunnel_url,
+        deployment_mode=DEPLOYMENT_MODE,
+        auth_provider=AUTH_PROVIDER,
+        turn_enabled=ENABLE_COTURN,
+        force_turn_relay=FORCE_TURN_RELAY,
+        signup_enabled=ENABLE_SIGNUP,
+        stack_project_id=STACK_AUTH_PROJECT_ID if is_stack else None,
+        stack_publishable_client_key=STACK_PUBLISHABLE_CLIENT_KEY if is_stack else None,
+        db_configured=is_db_custom,
+        db_host=db_host_masked,
+    )
         deployment_mode=DEPLOYMENT_MODE,
         auth_provider=AUTH_PROVIDER,
         turn_enabled=ENABLE_COTURN,
