@@ -1,0 +1,299 @@
+/* ==========================================================================
+   UI/UX PRO MAX - ULTRA-PREMIUM GLASSMORPHISM & AMBIENT COLOR SYSTEM
+   Crafted with luminous gradients, frosted acrylic glass, and neon accents.
+   ========================================================================== */
+
+:root,
+.dark {
+  --color-primary: #818cf8 !important;
+  --color-accent: #a855f7 !important;
+  --color-border: rgba(255, 255, 255, 0.1) !important;
+}
+
+/* 1. Atmospheric Ambient Canvas - Deep Obsidian Midnight with Luminous Nebula Glows */
+body,
+html {
+  background-color: #070914 !important;
+  background-image:
+    radial-gradient(ellipse 70% 50% at 15% 10%, rgba(99, 102, 241, 0.22) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 45% at 85% 20%, rgba(217, 70, 239, 0.18) 0%, transparent 55%),
+    radial-gradient(ellipse 80% 50% at 50% 90%, rgba(14, 165, 233, 0.18) 0%, transparent 60%),
+    radial-gradient(ellipse 40% 40% at 75% 75%, rgba(168, 85, 247, 0.14) 0%, transparent 50%) !important;
+  background-attachment: fixed !important;
+  color: #f1f5f9 !important;
+  min-height: 100vh !important;
+}
+
+/* 2. Glassmorphic App Sidebar */
+aside,
+[data-slot="sidebar"],
+nav[aria-label="Sidebar"] {
+  background: rgba(9, 12, 26, 0.75) !important;
+  backdrop-filter: blur(28px) saturate(190%) !important;
+  -webkit-backdrop-filter: blur(28px) saturate(190%) !important;
+  border-right: 1px solid rgba(255, 255, 255, 0.08) !important;
+  box-shadow: 4px 0 24px rgba(0, 0, 0, 0.4) !important;
+}
+
+/* Sidebar Active & Hover Items */
+[data-sidebar="menu-button"][data-active="true"],
+a[aria-current="page"],
+.sidebar-active {
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.28) 0%, rgba(168, 85, 247, 0.28) 100%) !important;
+  border: 1px solid rgba(129, 140, 248, 0.5) !important;
+  color: #ffffff !important;
+  font-weight: 600 !important;
+  box-shadow: 0 0 24px rgba(99, 102, 241, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.25) !important;
+  border-radius: 0.75rem !important;
+  transform: translateX(2px) !important;
+}
+
+[data-sidebar="menu-button"]:hover:not([data-active="true"]) {
+  background: rgba(255, 255, 255, 0.06) !important;
+  color: #ffffff !important;
+  border-radius: 0.75rem !important;
+}
+
+/* 3. True Glassmorphic Cards & Containers */
+.card-weave,
+[data-slot="card"],
+.glass-card,
+div[class*="rounded-xl border"][class*="bg-card"],
+div[class*="rounded-2xl border"] {
+  background: rgba(15, 20, 42, 0.6) !important;
+  backdrop-filter: blur(24px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(24px) saturate(180%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.09) !important;
+  box-shadow: 0 10px 32px 0 rgba(0, 0, 0, 0.45), inset 0 1px 0 0 rgba(255, 255, 255, 0.12) !important;
+  border-radius: 1.15rem !important;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+.card-weave:hover,
+[data-slot="card"]:hover,
+.glass-card:hover {
+  border-color: rgba(129, 140, 248, 0.4) !important;
+  box-shadow: 0 16px 44px -8px rgba(99, 102, 241, 0.25), inset 0 1px 1px 0 rgba(255, 255, 255, 0.22) !important;
+  transform: translateY(-2px) !important;
+}
+
+/* 4. Radiant Gradient Action Buttons */
+button[class*="bg-primary"],
+.btn-primary,
+button:has(svg):has(.upload),
+[data-slot="button"][data-variant="default"] {
+  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #d946ef 100%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.25) !important;
+  box-shadow: 0 4px 20px rgba(129, 140, 248, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.35) !important;
+  color: #ffffff !important;
+  font-weight: 600 !important;
+  border-radius: 0.85rem !important;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+button[class*="bg-primary"]:hover,
+.btn-primary:hover,
+[data-slot="button"][data-variant="default"]:hover {
+  box-shadow: 0 6px 28px rgba(168, 85, 247, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.45) !important;
+  filter: brightness(1.1) !important;
+  transform: translateY(-1px) !important;
+}
+
+/* 5. Glowing Translucent Badges */
+[data-slot="badge"],
+.badge {
+  background: rgba(255, 255, 255, 0.06) !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  backdrop-filter: blur(12px) !important;
+  border-radius: 9999px !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.02em !important;
+}
+
+/* 6. Frosted Glass Tabs */
+[data-slot="tabs-list"],
+div[role="tablist"] {
+  background: rgba(12, 16, 36, 0.65) !important;
+  border: 1px solid rgba(255, 255, 255, 0.09) !important;
+  backdrop-filter: blur(20px) !important;
+  border-radius: 1rem !important;
+  padding: 0.35rem !important;
+}
+
+[data-slot="tabs-trigger"][data-state="active"],
+button[role="tab"][data-state="active"] {
+  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 60%, #a855f7 100%) !important;
+  color: #ffffff !important;
+  font-weight: 600 !important;
+  border: 1px solid rgba(255, 255, 255, 0.25) !important;
+  box-shadow: 0 4px 18px rgba(99, 102, 241, 0.35) !important;
+  border-radius: 0.75rem !important;
+}
+
+[data-slot="tabs-trigger"]:not([data-state="active"]):hover,
+button[role="tab"]:not([data-state="active"]):hover {
+  background: rgba(255, 255, 255, 0.06) !important;
+  color: #f8fafc !important;
+}
+
+/* 7. Frosted Glass Inputs & Selects */
+input[type="text"],
+input[type="search"],
+input[type="password"],
+input[type="email"],
+textarea,
+[data-slot="input"],
+[data-slot="select-trigger"] {
+  background: rgba(14, 18, 40, 0.6) !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  backdrop-filter: blur(16px) !important;
+  color: #f8fafc !important;
+  border-radius: 0.75rem !important;
+  transition: all 0.2s ease !important;
+}
+
+input:focus,
+textarea:focus,
+[data-slot="input"]:focus,
+[data-slot="select-trigger"]:focus {
+  border-color: #818cf8 !important;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.25) !important;
+  outline: none !important;
+}
+
+/* 8. Frosted Dialogs & Modals */
+[data-slot="dialog-content"],
+div[role="dialog"] {
+  background: rgba(10, 14, 32, 0.9) !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  backdrop-filter: blur(32px) saturate(200%) !important;
+  box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.7), 0 0 40px rgba(99, 102, 241, 0.15) !important;
+  border-radius: 1.5rem !important;
+}
+
+/* 9. Glowing Audio Wave Animation */
+@keyframes audio-bounce {
+
+  0%,
+  100% {
+    height: 25%;
+  }
+
+  50% {
+    height: 100%;
+  }
+}
+
+.wave-bar-active {
+  animation: audio-bounce 0.8s ease-in-out infinite;
+}
+
+/* 10. Smooth Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(10, 14, 30, 0.5);
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(129, 140, 248, 0.3);
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(129, 140, 248, 0.6);
+}
+
+
+/* ==========================================================================
+   EXTRA UI/UX PRO MAX SUPERPOWERS: TABLES, DIALOGS, STATS & ACCENTS
+   ========================================================================== */
+
+/* Tables - Frosted Translucent Rows */
+table {
+  background: transparent !important;
+  border-collapse: separate !important;
+  border-spacing: 0 0.4rem !important;
+}
+
+thead th {
+  background: rgba(14, 18, 38, 0.4) !important;
+  color: #94a3b8 !important;
+  font-weight: 600 !important;
+  text-transform: uppercase !important;
+  font-size: 0.72rem !important;
+  letter-spacing: 0.05em !important;
+  border: none !important;
+  padding: 0.75rem 1rem !important;
+}
+
+tbody tr {
+  background: rgba(16, 22, 46, 0.5) !important;
+  backdrop-filter: blur(12px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.06) !important;
+  border-radius: 0.75rem !important;
+  transition: all 0.2s ease !important;
+}
+
+tbody tr:hover {
+  background: rgba(28, 36, 75, 0.6) !important;
+  border-color: rgba(129, 140, 248, 0.35) !important;
+  box-shadow: 0 4px 20px rgba(99, 102, 241, 0.15) !important;
+  transform: translateY(-1px) !important;
+}
+
+tbody td {
+  padding: 0.85rem 1rem !important;
+  border: none !important;
+  color: #e2e8f0 !important;
+}
+
+tbody td:first-child {
+  border-top-left-radius: 0.75rem !important;
+  border-bottom-left-radius: 0.75rem !important;
+}
+
+tbody td:last-child {
+  border-top-right-radius: 0.75rem !important;
+  border-bottom-right-radius: 0.75rem !important;
+}
+
+/* Page Titles with Subtle Gradient Glow */
+h1.text-3xl {
+  background: linear-gradient(135deg, #ffffff 30%, #c7d2fe 70%, #e0e7ff 100%) !important;
+  -webkit-background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+  letter-spacing: -0.025em !important;
+  font-weight: 800 !important;
+}
+
+/* Floating Status Pills */
+span[class*="text-emerald"],
+span[class*="bg-emerald"] {
+  box-shadow: 0 0 12px rgba(16, 185, 129, 0.25) !important;
+}
+
+span[class*="text-indigo"],
+span[class*="bg-indigo"] {
+  box-shadow: 0 0 12px rgba(99, 102, 241, 0.25) !important;
+}
+
+span[class*="text-purple"],
+span[class*="bg-purple"] {
+  box-shadow: 0 0 12px rgba(168, 85, 247, 0.25) !important;
+}
+
+/* Switches & Toggles */
+button[role="switch"][data-state="checked"] {
+  background: linear-gradient(135deg, #6366f1, #a855f7) !important;
+  box-shadow: 0 0 12px rgba(99, 102, 241, 0.4) !important;
+}
+
+/* Dialog Backdrop */
+[data-slot="dialog-overlay"] {
+  background: rgba(3, 5, 15, 0.8) !important;
+  backdrop-filter: blur(12px) !important;
+}

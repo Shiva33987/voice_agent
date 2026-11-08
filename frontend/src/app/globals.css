@@ -1,0 +1,955 @@
+@import "tailwindcss";
+
+@plugin "tailwindcss-animate";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --color-cta: var(--cta);
+  --color-cta-foreground: var(--cta-foreground);
+}
+
+:root {
+  --radius: 0.625rem;
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.145 0 0);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.145 0 0);
+  --primary: oklch(0.205 0 0);
+  --primary-foreground: oklch(0.985 0 0);
+  --secondary: oklch(0.97 0 0);
+  --secondary-foreground: oklch(0.205 0 0);
+  --muted: oklch(0.97 0 0);
+  --muted-foreground: oklch(0.556 0 0);
+  --accent: oklch(0.97 0 0);
+  --accent-foreground: oklch(0.205 0 0);
+  --destructive: oklch(0.577 0.245 27.325);
+  --border: oklch(0.922 0 0);
+  --input: oklch(0.922 0 0);
+  --ring: oklch(0.708 0 0);
+  --chart-1: oklch(0.646 0.222 41.116);
+  --chart-2: oklch(0.6 0.118 184.704);
+  --chart-3: oklch(0.398 0.07 227.392);
+  --chart-4: oklch(0.828 0.189 84.429);
+  --chart-5: oklch(0.769 0.188 70.08);
+  --sidebar: oklch(0.985 0 0);
+  --sidebar-foreground: oklch(0.145 0 0);
+  --sidebar-primary: oklch(0.205 0 0);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.97 0 0);
+  --sidebar-accent-foreground: oklch(0.205 0 0);
+  --sidebar-border: oklch(0.922 0 0);
+  --sidebar-ring: oklch(0.708 0 0);
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.145 0 0);
+  /* Single restrained warm accent — used only on primary CTAs + focus rings. */
+  --cta: oklch(0.72 0.15 65);
+  --cta-foreground: oklch(0.16 0.02 60);
+  /* Canvas watermark disabled */
+  --brand-imprint: none;
+}
+
+.dark {
+  --background: oklch(0.145 0 0);
+  --foreground: oklch(0.985 0 0);
+  --card: oklch(0.205 0 0);
+  --card-foreground: oklch(0.985 0 0);
+  --popover: oklch(0.205 0 0);
+  --popover-foreground: oklch(0.985 0 0);
+  --primary: oklch(0.922 0 0);
+  --primary-foreground: oklch(0.205 0 0);
+  --secondary: oklch(0.269 0 0);
+  --secondary-foreground: oklch(0.985 0 0);
+  --muted: oklch(0.269 0 0);
+  --muted-foreground: oklch(0.708 0 0);
+  --accent: oklch(0.269 0 0);
+  --accent-foreground: oklch(0.985 0 0);
+  --destructive: oklch(0.704 0.191 22.216);
+  --border: oklch(1 0 0 / 10%);
+  --input: oklch(1 0 0 / 15%);
+  --ring: oklch(0.556 0 0);
+  --chart-1: oklch(0.488 0.243 264.376);
+  --chart-2: oklch(0.696 0.17 162.48);
+  --chart-3: oklch(0.769 0.188 70.08);
+  --chart-4: oklch(0.627 0.265 303.9);
+  --chart-5: oklch(0.645 0.246 16.439);
+  --sidebar: oklch(0.205 0 0);
+  --sidebar-foreground: oklch(0.985 0 0);
+  --sidebar-primary: oklch(0.488 0.243 264.376);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.269 0 0);
+  --sidebar-accent-foreground: oklch(0.985 0 0);
+  --sidebar-border: oklch(1 0 0 / 10%);
+  --sidebar-ring: oklch(0.556 0 0);
+  /* Warm accent, slightly brighter against the near-black surfaces. */
+  --cta: oklch(0.78 0.16 67);
+  --cta-foreground: oklch(0.16 0.02 60);
+  --brand-imprint: none;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+@keyframes spin-slow {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-spin-slow {
+  animation: spin-slow 3s linear infinite;
+}
+
+/* Attention pulse applied by OnboardingTooltip to the element its arrow points
+   at; removed automatically when the tooltip is dismissed. Blue matches the
+   tooltip body so the ring and the callout read as one unit. Two shadow layers:
+   a constant outline so the target stays highlighted between pulses, plus an
+   expanding wave, with a slight breathing scale on top. */
+.onboarding-pulse {
+  animation: onboarding-pulse 1.5s ease-out infinite;
+}
+
+@keyframes onboarding-pulse {
+  0% {
+    box-shadow:
+      0 0 0 3px rgba(59, 130, 246, 0.75),
+      0 0 0 3px rgba(59, 130, 246, 0.6);
+    transform: scale(1);
+  }
+  40% {
+    transform: scale(1.04);
+  }
+  70% {
+    box-shadow:
+      0 0 0 3px rgba(59, 130, 246, 0.75),
+      0 0 0 18px rgba(59, 130, 246, 0);
+    transform: scale(1);
+  }
+  100% {
+    box-shadow:
+      0 0 0 3px rgba(59, 130, 246, 0.75),
+      0 0 0 18px rgba(59, 130, 246, 0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .onboarding-pulse {
+    animation: none;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.6);
+  }
+}
+
+@layer components {
+  /* CSS-only audio-waveform motif for the auth brand panel. A row of bars that
+     breathe at staggered intervals, evoking live voice. Decorative only. */
+  .auth-waveform {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    height: 3.5rem;
+  }
+
+  .auth-waveform span {
+    display: block;
+    width: 0.25rem;
+    border-radius: 9999px;
+    background: linear-gradient(
+      to top,
+      color-mix(in oklch, var(--cta) 70%, transparent),
+      color-mix(in oklch, var(--cta) 25%, transparent)
+    );
+    animation: auth-wave 1.4s ease-in-out infinite;
+    transform-origin: center;
+  }
+
+  .auth-waveform span:nth-child(1) { animation-delay: 0s; height: 35%; }
+  .auth-waveform span:nth-child(2) { animation-delay: 0.15s; height: 65%; }
+  .auth-waveform span:nth-child(3) { animation-delay: 0.3s; height: 100%; }
+  .auth-waveform span:nth-child(4) { animation-delay: 0.45s; height: 55%; }
+  .auth-waveform span:nth-child(5) { animation-delay: 0.6s; height: 80%; }
+  .auth-waveform span:nth-child(6) { animation-delay: 0.3s; height: 45%; }
+  .auth-waveform span:nth-child(7) { animation-delay: 0.15s; height: 70%; }
+  .auth-waveform span:nth-child(8) { animation-delay: 0s; height: 30%; }
+
+  @keyframes auth-wave {
+    0%, 100% { transform: scaleY(0.4); opacity: 0.7; }
+    50% { transform: scaleY(1); opacity: 1; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .auth-waveform span { animation: none; }
+  }
+
+  /* Matte app background — flat charcoal (dark) / soft paper (light), NO
+     gradients, with one subtle graphic in BOTH themes: the giant faded
+     "dograh" wordmark (--brand-imprint, defined in :root/.dark) pinned to
+     the bottom of the viewport, echoing the dograh.com footer. */
+  /* NOTE: background-attachment: fixed positions in VIEWPORT space but only
+     paints inside .app-surface, which starts right of the ~270px sidebar —
+     the +135px x-shift recentres the wordmark on the VISIBLE canvas. */
+  .app-surface {
+    background-color: oklch(0.984 0.001 80);
+  }
+  .dark .app-surface {
+    background-color: oklch(0.165 0.002 80);
+  }
+
+  .auth-imprint {
+  }
+
+  /* "On air" indicator for the event banner's LIVE eyebrow: the dot itself
+     breathes while a halo ring expands out of it, so the label reads as a live
+     signal rather than a static bullet. The ring is a box-shadow (no extra
+     element), so the dot stays a 1.5x1.5 box in the flex row. */
+  .signal-pulse {
+    animation: signal-pulse 2s ease-out infinite;
+  }
+
+  @keyframes signal-pulse {
+    0% {
+      box-shadow: 0 0 0 0 color-mix(in oklab, var(--cta) 55%, transparent);
+      opacity: 1;
+    }
+    70% {
+      box-shadow: 0 0 0 4px color-mix(in oklab, var(--cta) 0%, transparent);
+      opacity: 0.65;
+    }
+    100% {
+      box-shadow: 0 0 0 0 color-mix(in oklab, var(--cta) 0%, transparent);
+      opacity: 1;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .signal-pulse {
+      animation: none;
+    }
+  }
+
+}
+
+/* ---------------------------------------------------------------------------
+   UN-LAYERED overrides. These intentionally live OUTSIDE @layer blocks:
+   they restyle elements that carry Tailwind utility classes (bg-sidebar,
+   rounded-lg, shadow-sm, border-*) and utilities sit in a later cascade
+   layer than @layer components — un-layered author CSS beats both.
+--------------------------------------------------------------------------- */
+
+/* Floating-dock sidebar: detached rounded panel. Targets the shadcn sidebar's
+   inner panel; applied via .app-sidebar-dock on <Sidebar variant="floating">. */
+.app-sidebar-dock [data-slot="sidebar-inner"] {
+  border-radius: 1.25rem;
+  overflow: hidden;
+}
+/* Flat carbon-charcoal panel with a soft light glow along the LEFT edge:
+   a 1px highlight line plus an inner bloom fading rightwards. */
+.dark .app-sidebar-dock [data-slot="sidebar-inner"] {
+  border-color: rgb(255 255 255 / 0.1);
+  background-color: oklch(0.18 0.002 80);
+  box-shadow:
+    inset 1px 0 0 rgb(255 255 255 / 0.1),
+    inset 3px 0 6px -4px rgb(255 255 255 / 0.08),
+    0 24px 50px -14px rgb(0 0 0 / 0.85);
+}
+
+/* Card surface ("Crosshatch + Top-Lit Edge", user-approved 2026-06-11 after a
+   3-round design board): a 45° hairline twill weave at 1% laid over the panel
+   colour, plus — dark mode only — a brighter SOLID top border, like light
+   catching the machined top edge of the panel. Applied app-wide by the Card
+   primitive (components/ui/card.tsx). Un-layered so border-top-color beats
+   the border-border/60 utility. No gradients (user constraint). */
+.card-weave {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12'%3E%3Cpath d='M0 0l12 12M12 0L0 12' stroke='%23000000' stroke-opacity='.015' fill='none'/%3E%3C/svg%3E");
+  background-repeat: repeat;
+}
+.dark .card-weave {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12'%3E%3Cpath d='M0 0l12 12M12 0L0 12' stroke='%23ffffff' stroke-opacity='.01' fill='none'/%3E%3C/svg%3E");
+  border-top-color: rgb(255 255 255 / 0.2);
+}
+
+/* Lead-form shell ("Ledger" treatment, user-approved 2026-06-11): neutral
+   charcoal slab where ONLY the header band is darker (body and footer share
+   the slab colour), muted compact labels, and underline-only fields with an
+   amber underline on focus. Applied by LeadModalShell; CaptchaChallenge
+   reuses slab + underline. */
+.dark .lead-form-slab {
+  background-color: oklch(0.215 0 0);
+  border-color: rgb(255 255 255 / 0.1);
+}
+/* Muted, compact labels — the big white default labels read amateurish. */
+.lead-form-underline label {
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--muted-foreground);
+}
+/* Ghost placeholders: present on every field, but barely-there. */
+.lead-form-underline :is(input, textarea)::placeholder {
+  color: var(--muted-foreground);
+  opacity: 0.14;
+}
+.lead-form-underline [data-slot="select-trigger"][data-placeholder] {
+  color: color-mix(in oklab, var(--muted-foreground) 17%, transparent);
+}
+/* Underline-only fields: transparent box, hairline bottom border, amber
+   underline on the focused control. Compact heights keep rows tight. */
+.lead-form-underline :is(input, textarea, [data-slot="select-trigger"]) {
+  background-color: transparent;
+  border-top: 0;
+  border-left: 0;
+  border-right: 0;
+  border-bottom: 1px solid var(--border);
+  border-radius: 0;
+  box-shadow: none;
+  padding-left: 2px;
+  padding-right: 2px;
+}
+.lead-form-underline :is(input, [data-slot="select-trigger"]) {
+  height: 2.125rem;
+}
+.lead-form-underline textarea {
+  min-height: 3.25rem;
+}
+/* The phone country selector ships its own box — flatten it to match. */
+.lead-form-underline .react-international-phone-country-selector-button {
+  border: 0 !important;
+  border-bottom: 1px solid var(--border) !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+}
+.lead-form-underline :is(input, textarea, [data-slot="select-trigger"]):focus-visible,
+.lead-form-underline [data-slot="select-trigger"][data-state="open"] {
+  outline: none;
+  box-shadow: none;
+  border-bottom-color: var(--cta);
+}
+
+/* Event banner (Dograh Cloud only, NEXT_PUBLIC_EVENT_BANNER=1). The bar is
+   sticky at top-0 in the root layout, so while it is up it permanently owns
+   --event-banner-h pixels at the top of the viewport. Two things have to give
+   way, and both are utility-class'd primitives we do not want to fork:
+
+   - the shadcn sidebar's FIXED container (inset-y-0 h-svh), which would
+     otherwise start underneath the bar and run past the bottom of the screen;
+   - every full-height page shell (min-h-screen / min-h-svh: the sidebar
+     wrapper, the app shell, the auth shell), which would otherwise demand a
+     full viewport BELOW the bar and add a phantom scrollbar.
+
+   Both rules are gated on [data-event-banner], set on <html> by EventBanner
+   only while the bar is actually rendered — dismissed or env-gated off, these
+   selectors do not match and the layout is byte-for-byte what it was before
+   this block existed. */
+[data-event-banner] [data-slot="sidebar-container"] {
+  top: var(--event-banner-h, 0px);
+  height: calc(100svh - var(--event-banner-h, 0px));
+}
+
+[data-event-banner] [class~="min-h-screen"],
+[data-event-banner] [class~="min-h-svh"] {
+  min-height: calc(100svh - var(--event-banner-h, 0px));
+}
+/* ==========================================================================
+   UI/UX PRO MAX - ULTRA-PREMIUM GLASSMORPHISM & AMBIENT COLOR SYSTEM
+   Crafted with luminous gradients, frosted acrylic glass, and neon accents.
+   ========================================================================== */
+
+:root, .dark {
+  --color-primary: #818cf8 !important;
+  --color-accent: #a855f7 !important;
+  --color-border: rgba(255, 255, 255, 0.1) !important;
+}
+
+/* 1. Atmospheric Ambient Canvas - Deep Obsidian Midnight with Luminous Nebula Glows */
+body, html {
+  background-color: #070914 !important;
+  background-image: 
+    radial-gradient(ellipse 70% 50% at 15% 10%, rgba(99, 102, 241, 0.22) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 45% at 85% 20%, rgba(217, 70, 239, 0.18) 0%, transparent 55%),
+    radial-gradient(ellipse 80% 50% at 50% 90%, rgba(14, 165, 233, 0.18) 0%, transparent 60%),
+    radial-gradient(ellipse 40% 40% at 75% 75%, rgba(168, 85, 247, 0.14) 0%, transparent 50%) !important;
+  background-attachment: fixed !important;
+  color: #f1f5f9 !important;
+  min-height: 100vh !important;
+}
+
+/* 2. Glassmorphic App Sidebar */
+aside,
+[data-slot="sidebar"],
+nav[aria-label="Sidebar"] {
+  background: rgba(9, 12, 26, 0.75) !important;
+  backdrop-filter: blur(28px) saturate(190%) !important;
+  -webkit-backdrop-filter: blur(28px) saturate(190%) !important;
+  border-right: 1px solid rgba(255, 255, 255, 0.08) !important;
+  box-shadow: 4px 0 24px rgba(0, 0, 0, 0.4) !important;
+}
+
+/* Sidebar Active & Hover Items */
+[data-sidebar="menu-button"][data-active="true"],
+a[aria-current="page"],
+.sidebar-active {
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.28) 0%, rgba(168, 85, 247, 0.28) 100%) !important;
+  border: 1px solid rgba(129, 140, 248, 0.5) !important;
+  color: #ffffff !important;
+  font-weight: 600 !important;
+  box-shadow: 0 0 24px rgba(99, 102, 241, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.25) !important;
+  border-radius: 0.75rem !important;
+  transform: translateX(2px) !important;
+}
+
+[data-sidebar="menu-button"]:hover:not([data-active="true"]) {
+  background: rgba(255, 255, 255, 0.06) !important;
+  color: #ffffff !important;
+  border-radius: 0.75rem !important;
+}
+
+/* 3. True Glassmorphic Cards & Containers */
+.card-weave,
+[data-slot="card"],
+.glass-card,
+div[class*="rounded-xl border"][class*="bg-card"],
+div[class*="rounded-2xl border"] {
+  background: rgba(15, 20, 42, 0.6) !important;
+  backdrop-filter: blur(24px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(24px) saturate(180%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.09) !important;
+  box-shadow: 0 10px 32px 0 rgba(0, 0, 0, 0.45), inset 0 1px 0 0 rgba(255, 255, 255, 0.12) !important;
+  border-radius: 1.15rem !important;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+.card-weave:hover,
+[data-slot="card"]:hover,
+.glass-card:hover {
+  border-color: rgba(129, 140, 248, 0.4) !important;
+  box-shadow: 0 16px 44px -8px rgba(99, 102, 241, 0.25), inset 0 1px 1px 0 rgba(255, 255, 255, 0.22) !important;
+  transform: translateY(-2px) !important;
+}
+
+/* 4. Radiant Gradient Action Buttons */
+button[class*="bg-primary"],
+.btn-primary,
+button:has(svg):has(.upload),
+[data-slot="button"][data-variant="default"] {
+  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #d946ef 100%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.25) !important;
+  box-shadow: 0 4px 20px rgba(129, 140, 248, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.35) !important;
+  color: #ffffff !important;
+  font-weight: 600 !important;
+  border-radius: 0.85rem !important;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+button[class*="bg-primary"]:hover,
+.btn-primary:hover,
+[data-slot="button"][data-variant="default"]:hover {
+  box-shadow: 0 6px 28px rgba(168, 85, 247, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.45) !important;
+  filter: brightness(1.1) !important;
+  transform: translateY(-1px) !important;
+}
+
+/* 5. Glowing Translucent Badges */
+[data-slot="badge"],
+.badge {
+  background: rgba(255, 255, 255, 0.06) !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  backdrop-filter: blur(12px) !important;
+  border-radius: 9999px !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.02em !important;
+}
+
+/* 6. Frosted Glass Tabs */
+[data-slot="tabs-list"],
+div[role="tablist"] {
+  background: rgba(12, 16, 36, 0.65) !important;
+  border: 1px solid rgba(255, 255, 255, 0.09) !important;
+  backdrop-filter: blur(20px) !important;
+  border-radius: 1rem !important;
+  padding: 0.35rem !important;
+}
+
+[data-slot="tabs-trigger"][data-state="active"],
+button[role="tab"][data-state="active"] {
+  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 60%, #a855f7 100%) !important;
+  color: #ffffff !important;
+  font-weight: 600 !important;
+  border: 1px solid rgba(255, 255, 255, 0.25) !important;
+  box-shadow: 0 4px 18px rgba(99, 102, 241, 0.35) !important;
+  border-radius: 0.75rem !important;
+}
+
+[data-slot="tabs-trigger"]:not([data-state="active"]):hover,
+button[role="tab"]:not([data-state="active"]):hover {
+  background: rgba(255, 255, 255, 0.06) !important;
+  color: #f8fafc !important;
+}
+
+/* 7. Frosted Glass Inputs & Selects */
+input[type="text"],
+input[type="search"],
+input[type="password"],
+input[type="email"],
+textarea,
+[data-slot="input"],
+[data-slot="select-trigger"] {
+  background: rgba(14, 18, 40, 0.6) !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  backdrop-filter: blur(16px) !important;
+  color: #f8fafc !important;
+  border-radius: 0.75rem !important;
+  transition: all 0.2s ease !important;
+}
+
+input:focus,
+textarea:focus,
+[data-slot="input"]:focus,
+[data-slot="select-trigger"]:focus {
+  border-color: #818cf8 !important;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.25) !important;
+  outline: none !important;
+}
+
+/* 8. Frosted Dialogs & Modals */
+[data-slot="dialog-content"],
+div[role="dialog"] {
+  background: rgba(10, 14, 32, 0.9) !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  backdrop-filter: blur(32px) saturate(200%) !important;
+  box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.7), 0 0 40px rgba(99, 102, 241, 0.15) !important;
+  border-radius: 1.5rem !important;
+}
+
+/* 9. Glowing Audio Wave Animation */
+@keyframes audio-bounce {
+  0%, 100% { height: 25%; }
+  50% { height: 100%; }
+}
+
+.wave-bar-active {
+  animation: audio-bounce 0.8s ease-in-out infinite;
+}
+
+/* 10. Smooth Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: rgba(10, 14, 30, 0.5);
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(129, 140, 248, 0.3);
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(129, 140, 248, 0.6);
+}
+/* ==========================================================================
+   UI/UX PRO MAX - ULTRA-PREMIUM VIBRANT GLASSMORPHISM & NEBULA CANVAS
+   Never flat, never pitch black. Luminous, frosted, vibrant & executive.
+   ========================================================================== */
+
+/* 1. Global Reset & Atmospheric Nebula Canvas */
+html,
+body,
+.app-surface,
+[data-slot="sidebar-inset"],
+main {
+  background-color: #080b1e !important;
+  background-image:
+    radial-gradient(ellipse 80% 60% at 10% 8%, rgba(99, 102, 241, 0.25) 0%, transparent 60%),
+    radial-gradient(ellipse 70% 50% at 90% 12%, rgba(217, 70, 239, 0.22) 0%, transparent 55%),
+    radial-gradient(ellipse 90% 60% at 50% 95%, rgba(14, 165, 233, 0.22) 0%, transparent 65%),
+    radial-gradient(ellipse 50% 50% at 75% 70%, rgba(168, 85, 247, 0.18) 0%, transparent 55%),
+    radial-gradient(ellipse 45% 45% at 25% 60%, rgba(16, 185, 129, 0.12) 0%, transparent 50%) !important;
+  background-attachment: fixed !important;
+  color: #f8fafc !important;
+  min-height: 100vh !important;
+}
+
+/* Remove dull watermark */
+.app-surface,
+.dark .app-surface {
+  background-image: 
+    radial-gradient(ellipse 80% 60% at 10% 8%, rgba(99, 102, 241, 0.25) 0%, transparent 60%),
+    radial-gradient(ellipse 70% 50% at 90% 12%, rgba(217, 70, 239, 0.22) 0%, transparent 55%),
+    radial-gradient(ellipse 90% 60% at 50% 95%, rgba(14, 165, 233, 0.22) 0%, transparent 65%),
+    radial-gradient(ellipse 50% 50% at 75% 70%, rgba(168, 85, 247, 0.18) 0%, transparent 55%) !important;
+  background-color: #080b1e !important;
+}
+
+/* 2. Glassmorphic App Sidebar */
+aside,
+[data-slot="sidebar"],
+nav[aria-label="Sidebar"],
+[data-sidebar="sidebar"] {
+  background: rgba(10, 14, 34, 0.72) !important;
+  backdrop-filter: blur(30px) saturate(200%) !important;
+  -webkit-backdrop-filter: blur(30px) saturate(200%) !important;
+  border-right: 1px solid rgba(255, 255, 255, 0.09) !important;
+  box-shadow: 6px 0 35px rgba(0, 0, 0, 0.45) !important;
+}
+
+/* Sidebar Section Headers (BUILD, MANAGE) */
+[data-sidebar="group-label"],
+.sidebar-group-label {
+  color: #a5b4fc !important;
+  font-weight: 800 !important;
+  font-size: 0.72rem !important;
+  letter-spacing: 0.12em !important;
+  text-transform: uppercase !important;
+  text-shadow: 0 0 12px rgba(165, 180, 252, 0.3) !important;
+  margin-top: 0.5rem !important;
+}
+
+/* Sidebar Navigation Items */
+[data-sidebar="menu-button"] {
+  border-radius: 0.85rem !important;
+  color: #cbd5e1 !important;
+  font-weight: 500 !important;
+  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+[data-sidebar="menu-button"]:hover:not([data-active="true"]) {
+  background: rgba(255, 255, 255, 0.08) !important;
+  color: #ffffff !important;
+  transform: translateX(3px) !important;
+}
+
+/* Active Navigation Item (Voice Agents, etc.) */
+[data-sidebar="menu-button"][data-active="true"],
+a[aria-current="page"] {
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.32) 0%, rgba(168, 85, 247, 0.32) 100%) !important;
+  border: 1px solid rgba(165, 180, 252, 0.45) !important;
+  color: #ffffff !important;
+  font-weight: 700 !important;
+  box-shadow: 0 0 25px rgba(99, 102, 241, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.28) !important;
+  border-radius: 0.85rem !important;
+  transform: translateX(3px) !important;
+}
+
+/* 3. High-Impact Typography & Page Headers */
+h1, .text-3xl, .text-2xl {
+  background: linear-gradient(135deg, #ffffff 40%, #c7d2fe 75%, #a855f7 100%) !important;
+  -webkit-background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+  font-weight: 800 !important;
+  letter-spacing: -0.02em !important;
+}
+
+h2, .text-xl {
+  color: #f1f5f9 !important;
+  font-weight: 700 !important;
+  letter-spacing: -0.01em !important;
+}
+
+/* 4. Action Buttons (Header & Secondary) */
+button[variant="outline"],
+.btn-outline,
+button:has(svg):not([class*="bg-primary"]):not([class*="border-rose"]):not([class*="text-rose"]) {
+  background: rgba(24, 32, 68, 0.55) !important;
+  backdrop-filter: blur(16px) !important;
+  -webkit-backdrop-filter: blur(16px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.14) !important;
+  color: #e2e8f0 !important;
+  font-weight: 600 !important;
+  border-radius: 0.8rem !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.15) !important;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+button[variant="outline"]:hover,
+.btn-outline:hover {
+  background: rgba(99, 102, 241, 0.25) !important;
+  border-color: rgba(165, 180, 252, 0.5) !important;
+  color: #ffffff !important;
+  box-shadow: 0 6px 24px rgba(99, 102, 241, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.25) !important;
+  transform: translateY(-1.5px) !important;
+}
+
+/* Primary Flagship CTA (+ Create Agent) */
+button[class*="bg-primary"],
+.btn-primary,
+button:has(.upload):not([variant="outline"]),
+[data-slot="button"][data-variant="default"] {
+  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #ec4899 100%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.3) !important;
+  box-shadow: 0 4px 22px rgba(139, 92, 246, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.4) !important;
+  color: #ffffff !important;
+  font-weight: 700 !important;
+  border-radius: 0.85rem !important;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+button[class*="bg-primary"]:hover,
+.btn-primary:hover,
+[data-slot="button"][data-variant="default"]:hover {
+  filter: brightness(1.15) !important;
+  box-shadow: 0 8px 30px rgba(236, 72, 153, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.5) !important;
+  transform: translateY(-2px) !important;
+}
+
+/* 5. True Glassmorphic Tables & Cards */
+.card,
+[data-slot="card"],
+div[class*="rounded-xl border"][class*="bg-card"],
+div[class*="rounded-2xl border"] {
+  background: rgba(14, 20, 48, 0.65) !important;
+  backdrop-filter: blur(28px) saturate(190%) !important;
+  -webkit-backdrop-filter: blur(28px) saturate(190%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.45), 0 0 35px rgba(99, 102, 241, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.18) !important;
+  border-radius: 1.25rem !important;
+  overflow: hidden !important;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+/* Table Header */
+thead,
+tr:has(th) {
+  background: rgba(255, 255, 255, 0.04) !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+th {
+  color: #94a3b8 !important;
+  font-weight: 700 !important;
+  font-size: 0.8rem !important;
+  letter-spacing: 0.08em !important;
+  text-transform: uppercase !important;
+  padding: 1.1rem 1.25rem !important;
+}
+
+/* Table Body Rows */
+tbody tr {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06) !important;
+  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+tbody tr:hover {
+  background: linear-gradient(90deg, rgba(99, 102, 241, 0.14) 0%, rgba(168, 85, 247, 0.14) 50%, rgba(56, 189, 248, 0.09) 100%) !important;
+  box-shadow: inset 0 0 24px rgba(99, 102, 241, 0.18) !important;
+}
+
+td {
+  padding: 1.15rem 1.25rem !important;
+  color: #f1f5f9 !important;
+}
+
+/* ID Micro-badge */
+td:first-child,
+.agent-id-badge {
+  font-family: var(--font-mono), monospace !important;
+  color: #c7d2fe !important;
+  font-weight: 700 !important;
+}
+
+/* Agent Name Highlight */
+td:nth-child(2) {
+  color: #ffffff !important;
+  font-weight: 600 !important;
+  font-size: 0.98rem !important;
+}
+
+/* Created At Date */
+td:nth-child(3) {
+  color: #cbd5e1 !important;
+  font-size: 0.88rem !important;
+}
+
+/* Total Runs Radiant Pill */
+span[class*="rounded-full"][class*="bg-muted"],
+td span:has(+ span),
+td .runs-badge {
+  background: linear-gradient(135deg, rgba(6, 182, 212, 0.22) 0%, rgba(99, 102, 241, 0.22) 100%) !important;
+  border: 1px solid rgba(56, 189, 248, 0.45) !important;
+  color: #38bdf8 !important;
+  font-weight: 800 !important;
+  padding: 0.35rem 0.85rem !important;
+  border-radius: 9999px !important;
+  box-shadow: 0 0 16px rgba(56, 189, 248, 0.25) !important;
+  font-size: 0.85rem !important;
+}
+
+/* Action Buttons inside Table */
+/* Edit Button */
+button:has(svg.lucide-pencil),
+button:has(svg[class*="pencil"]) {
+  background: rgba(14, 165, 233, 0.12) !important;
+  border: 1px solid rgba(56, 189, 248, 0.35) !important;
+  color: #7dd3fc !important;
+  font-weight: 600 !important;
+  border-radius: 0.65rem !important;
+  transition: all 0.2s ease !important;
+}
+
+button:has(svg.lucide-pencil):hover,
+button:has(svg[class*="pencil"]):hover {
+  background: rgba(14, 165, 233, 0.25) !important;
+  border-color: rgba(56, 189, 248, 0.6) !important;
+  color: #ffffff !important;
+  box-shadow: 0 0 18px rgba(56, 189, 248, 0.35) !important;
+  transform: translateY(-1px) !important;
+}
+
+/* Archive Button */
+button:has(svg.lucide-archive),
+button:has(svg[class*="archive"]) {
+  background: rgba(245, 158, 11, 0.12) !important;
+  border: 1px solid rgba(251, 191, 36, 0.35) !important;
+  color: #fde68a !important;
+  font-weight: 600 !important;
+  border-radius: 0.65rem !important;
+  transition: all 0.2s ease !important;
+}
+
+button:has(svg.lucide-archive):hover,
+button:has(svg[class*="archive"]):hover {
+  background: rgba(245, 158, 11, 0.25) !important;
+  border-color: rgba(251, 191, 36, 0.6) !important;
+  color: #ffffff !important;
+  box-shadow: 0 0 18px rgba(245, 158, 11, 0.35) !important;
+  transform: translateY(-1px) !important;
+}
+
+/* Delete Button */
+button[class*="border-rose"],
+button[title*="delete"],
+button[title*="Delete"] {
+  background: rgba(244, 63, 94, 0.14) !important;
+  border: 1px solid rgba(244, 63, 94, 0.4) !important;
+  color: #fda4af !important;
+  font-weight: 600 !important;
+  border-radius: 0.65rem !important;
+  box-shadow: 0 2px 10px rgba(244, 63, 94, 0.2) !important;
+  transition: all 0.2s ease !important;
+}
+
+button[class*="border-rose"]:hover,
+button[title*="delete"]:hover,
+button[title*="Delete"]:hover {
+  background: rgba(244, 63, 94, 0.28) !important;
+  border-color: rgba(244, 63, 94, 0.7) !important;
+  color: #ffffff !important;
+  box-shadow: 0 0 20px rgba(244, 63, 94, 0.45) !important;
+  transform: translateY(-1px) !important;
+}
+
+/* 6. Inputs & Search Fields */
+input,
+input[type="text"],
+input[type="search"] {
+  background: rgba(18, 25, 58, 0.6) !important;
+  backdrop-filter: blur(12px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.14) !important;
+  color: #ffffff !important;
+  border-radius: 0.75rem !important;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.25) !important;
+  transition: all 0.2s ease !important;
+}
+
+input:focus {
+  border-color: rgba(129, 140, 248, 0.6) !important;
+  box-shadow: 0 0 20px rgba(99, 102, 241, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.1) !important;
+  outline: none !important;
+}
+
+/* 7. Dropdown & Context Menus */
+[data-slot="dropdown-menu-content"],
+div[role="menu"] {
+  background: rgba(12, 17, 42, 0.9) !important;
+  backdrop-filter: blur(28px) saturate(200%) !important;
+  -webkit-backdrop-filter: blur(28px) saturate(200%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.6), 0 0 30px rgba(99, 102, 241, 0.2) !important;
+  border-radius: 1rem !important;
+}
+
+[data-slot="dropdown-menu-item"],
+div[role="menuitem"] {
+  color: #cbd5e1 !important;
+  border-radius: 0.5rem !important;
+  transition: all 0.15s ease !important;
+}
+
+[data-slot="dropdown-menu-item"]:hover,
+div[role="menuitem"]:hover {
+  background: rgba(99, 102, 241, 0.25) !important;
+  color: #ffffff !important;
+}
+
+/* 8. Dialog & Modal Popups */
+[data-slot="dialog-content"],
+div[role="dialog"] {
+  background: rgba(12, 16, 40, 0.92) !important;
+  backdrop-filter: blur(32px) saturate(200%) !important;
+  -webkit-backdrop-filter: blur(32px) saturate(200%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.18) !important;
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.7), 0 0 45px rgba(139, 92, 246, 0.25) !important;
+  border-radius: 1.5rem !important;
+}
+
+/* 9. Scrollbar Polish */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(8, 11, 30, 0.6);
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(99, 102, 241, 0.35);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(139, 92, 246, 0.6);
+}

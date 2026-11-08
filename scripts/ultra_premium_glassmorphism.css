@@ -1,0 +1,656 @@
+/* ==========================================================================
+   UI/UX PRO MAX - ULTRA-PREMIUM VIBRANT GLASSMORPHISM & NEBULA CANVAS
+   Never flat, never pitch black. Luminous, frosted, vibrant & executive.
+   ========================================================================== */
+
+/* 1. Global Reset & Atmospheric Nebula Canvas */
+html,
+body,
+.app-surface,
+[data-slot="sidebar-inset"],
+main {
+  background-color: #080b1e !important;
+  background-image:
+    radial-gradient(ellipse 80% 60% at 10% 8%, rgba(99, 102, 241, 0.25) 0%, transparent 60%),
+    radial-gradient(ellipse 70% 50% at 90% 12%, rgba(217, 70, 239, 0.22) 0%, transparent 55%),
+    radial-gradient(ellipse 90% 60% at 50% 95%, rgba(14, 165, 233, 0.22) 0%, transparent 65%),
+    radial-gradient(ellipse 50% 50% at 75% 70%, rgba(168, 85, 247, 0.18) 0%, transparent 55%),
+    radial-gradient(ellipse 45% 45% at 25% 60%, rgba(16, 185, 129, 0.12) 0%, transparent 50%) !important;
+  background-attachment: fixed !important;
+  color: #f8fafc !important;
+  min-height: 100vh !important;
+}
+
+/* Remove dull watermark */
+.app-surface,
+.dark .app-surface {
+  background-image: 
+    radial-gradient(ellipse 80% 60% at 10% 8%, rgba(99, 102, 241, 0.25) 0%, transparent 60%),
+    radial-gradient(ellipse 70% 50% at 90% 12%, rgba(217, 70, 239, 0.22) 0%, transparent 55%),
+    radial-gradient(ellipse 90% 60% at 50% 95%, rgba(14, 165, 233, 0.22) 0%, transparent 65%),
+    radial-gradient(ellipse 50% 50% at 75% 70%, rgba(168, 85, 247, 0.18) 0%, transparent 55%) !important;
+  background-color: #080b1e !important;
+}
+
+/* Remove Join Slack & Star in Header */
+header a[href*="slack.com"],
+header a[href*="github.com"],
+a[href*="github.com/dograh"],
+header div:has(> a[href*="slack.com"]),
+header div:has(> a[href*="github.com"]) {
+  display: none !important;
+}
+
+/* Remove Dograh Brand Logo & Mark */
+img[src*="dograh-mark"],
+img[src*="dograh-logo"],
+img[alt="Dograh"],
+a[href="/"].notranslate img,
+[data-sidebar="header"] a[href="/"] img,
+[data-sidebar="header"] img {
+  display: none !important;
+}
+
+/* Remove Dograh header word in mobile/responsive header */
+header a[href="/"].md\:hidden,
+header a.md\:hidden,
+header a.text-lg.font-bold,
+[data-slot="sidebar-inset"] header a[href="/"] {
+  display: none !important;
+}
+
+/* Remove provider docs links & guides */
+a[href*="docs"][target="_blank"],
+a.text-blue-600.underline,
+a:has(> svg.lucide-external-link) {
+  display: none !important;
+}
+
+/* Remove Chatwoot support widget iframes and bubbles */
+.woot-widget-holder,
+.woot--bubble-holder,
+#chatwoot_live_chat_widget,
+iframe[src*="chat.dograh.com"] {
+  display: none !important;
+}
+
+/* Remove Version text in Sidebar */
+[data-sidebar="header"] span.notranslate.text-xs {
+  display: none !important;
+}
+
+/* Remove MANAGE section items */
+a[href="/usage"],
+a[href="/billing"],
+a[href="/reports"] {
+  display: none !important;
+}
+
+/* Remove Theme Toggle Moon / Sun button */
+button:has(svg.lucide-moon),
+button:has(svg.lucide-sun),
+[data-sidebar="footer"] div:has(> div > div > button:has(svg)) {
+  display: none !important;
+}
+
+/* Remove Hire an Expert button completely */
+button[aria-label="Hire an Expert"],
+button[title*="Hire an Expert"],
+[data-sidebar="footer"] button:has(svg[class*="user-round"]) {
+  display: none !important;
+}
+
+/* Ultra-Attractive Sidebar Profile Section */
+[data-sidebar="footer"] {
+  padding: 12px 14px !important;
+  background: transparent !important;
+}
+
+[data-sidebar="footer"] > div,
+[data-sidebar="footer"] .space-y-2 > div {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  border-radius: 0 !important;
+}
+
+/* The Profile Card Button */
+.user-profile-card,
+button.user-profile-card {
+  display: flex !important;
+  align-items: center !important;
+  width: 100% !important;
+  gap: 12px !important;
+  padding: 8px 12px !important;
+  border-radius: 12px !important;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.06) 0%, rgba(255, 255, 255, 0.02) 100%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  backdrop-filter: blur(16px) !important;
+  -webkit-backdrop-filter: blur(16px) !important;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.35) !important;
+  cursor: pointer !important;
+  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  text-align: left !important;
+  box-sizing: border-box !important;
+  outline: none !important;
+}
+
+.user-profile-card:hover,
+button.user-profile-card:hover {
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.18) 0%, rgba(168, 85, 247, 0.12) 100%) !important;
+  border-color: rgba(129, 140, 248, 0.5) !important;
+  box-shadow: 0 6px 24px rgba(99, 102, 241, 0.28) !important;
+  transform: translateY(-1px) !important;
+}
+
+/* Avatar Box */
+.user-profile-avatar {
+  position: relative !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 34px !important;
+  height: 34px !important;
+  min-width: 34px !important;
+  border-radius: 9px !important;
+  background: linear-gradient(135deg, #6366f1 0%, #a855f7 50%, #ec4899 100%) !important;
+  box-shadow: 0 2px 8px rgba(99, 102, 241, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.4) !important;
+  border: 1px solid rgba(255, 255, 255, 0.25) !important;
+  flex-shrink: 0 !important;
+  box-sizing: border-box !important;
+}
+
+.user-profile-avatar-text {
+  color: #ffffff !important;
+  font-weight: 700 !important;
+  font-size: 13px !important;
+  letter-spacing: 0.5px !important;
+  line-height: 1 !important;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.35) !important;
+  user-select: none !important;
+}
+
+/* Active Status Dot on Avatar */
+.user-profile-status-dot {
+  position: absolute !important;
+  bottom: -2px !important;
+  right: -2px !important;
+  width: 9px !important;
+  height: 9px !important;
+  border-radius: 50% !important;
+  background: #10b981 !important;
+  border: 2px solid #080b1e !important;
+  box-shadow: 0 0 6px #10b981 !important;
+  z-index: 5 !important;
+  box-sizing: content-box !important;
+}
+
+/* User Info Details */
+.user-profile-info {
+  display: flex !important;
+  flex-direction: column !important;
+  min-width: 0 !important;
+  flex: 1 1 0% !important;
+  gap: 2px !important;
+  overflow: hidden !important;
+}
+
+.user-profile-name {
+  font-size: 13px !important;
+  font-weight: 600 !important;
+  color: #f8fafc !important;
+  line-height: 1.25 !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  letter-spacing: -0.01em !important;
+}
+
+.user-profile-card:hover .user-profile-name {
+  color: #ffffff !important;
+}
+
+.user-profile-badge {
+  display: flex !important;
+  align-items: center !important;
+  gap: 5px !important;
+  font-size: 10px !important;
+  font-weight: 700 !important;
+  color: #34d399 !important;
+  letter-spacing: 0.08em !important;
+  text-transform: uppercase !important;
+  line-height: 1.2 !important;
+}
+
+.user-profile-badge-dot {
+  width: 6px !important;
+  height: 6px !important;
+  border-radius: 50% !important;
+  background: #34d399 !important;
+  box-shadow: 0 0 6px rgba(52, 211, 153, 0.9) !important;
+  display: inline-block !important;
+  flex-shrink: 0 !important;
+}
+
+/* Action Menu Icon (3 dots) */
+.user-profile-action {
+  color: #94a3b8 !important;
+  font-size: 16px !important;
+  line-height: 1 !important;
+  padding: 0 2px !important;
+  flex-shrink: 0 !important;
+  opacity: 0.65 !important;
+  transition: all 0.2s ease !important;
+}
+
+.user-profile-card:hover .user-profile-action {
+  color: #ffffff !important;
+  opacity: 1 !important;
+}
+
+/* ==========================================================================
+   2. PERMANENTLY STUCK IMMOVABLE SIDEBAR (DON'T MOVE)
+   ========================================================================== */
+
+/* Outer wrappers: strictly strip any transforms or filters that break position: fixed */
+[data-slot="sidebar"],
+[data-slot="sidebar-wrapper"],
+aside {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  transform: none !important;
+  filter: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  perspective: none !important;
+  contain: none !important;
+  will-change: auto !important;
+}
+
+/* Sidebar dock container is fixed and stuck to viewport */
+[data-slot="sidebar-container"],
+.app-sidebar-dock {
+  position: fixed !important;
+  top: 1rem !important;
+  bottom: 1rem !important;
+  left: 1rem !important;
+  height: calc(100vh - 2rem) !important;
+  max-height: calc(100vh - 2rem) !important;
+  width: 16rem !important;
+  min-width: 16rem !important;
+  max-width: 16rem !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  transform: none !important;
+  filter: none !important;
+  transition: none !important;
+  z-index: 50 !important;
+}
+
+/* The visual glassmorphic sidebar card stays strictly anchored */
+[data-sidebar="sidebar"] {
+  position: relative !important;
+  height: 100% !important;
+  width: 100% !important;
+  background: rgba(10, 14, 34, 0.82) !important;
+  background: rgba(10, 14, 34, 0.85) !important;
+  backdrop-filter: blur(30px) saturate(200%) !important;
+  -webkit-backdrop-filter: blur(30px) saturate(200%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  border-radius: 1.25rem !important;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.55), 0 0 20px rgba(99, 102, 241, 0.15) !important;
+  overflow: hidden !important;
+  transform: none !important;
+  transition: none !important;
+}
+
+/* Internal sidebar content never scrolls internally */
+[data-sidebar="content"],
+[data-slot="sidebar-content"] {
+  overflow: hidden !important;
+  overflow-y: hidden !important;
+}
+
+/* Prevent layout shift - gap reserves exact sidebar space */
+[data-slot="sidebar-gap"] {
+  width: 17.5rem !important;
+  min-width: 17.5rem !important;
+  max-width: 17.5rem !important;
+  flex-shrink: 0 !important;
+  transition: none !important;
+}
+
+/* Hide collapse button so sidebar never collapses, moves or shrinks */
+button[data-sidebar="trigger"],
+[data-slot="sidebar-trigger"] {
+  display: none !important;
+}
+
+/* Prevent any menu items from moving on hover */
+[data-sidebar="menu-button"],
+[data-sidebar="menu-button"]:hover {
+  transform: none !important;
+}
+
+/* Sidebar Section Headers (BUILD, MANAGE) */
+[data-sidebar="group-label"],
+.sidebar-group-label {
+  color: #a5b4fc !important;
+  font-weight: 800 !important;
+  font-size: 0.72rem !important;
+  letter-spacing: 0.12em !important;
+  text-transform: uppercase !important;
+  text-shadow: 0 0 12px rgba(165, 180, 252, 0.3) !important;
+  margin-top: 0.5rem !important;
+}
+
+/* Sidebar Navigation Items */
+[data-sidebar="menu-button"] {
+  border-radius: 0.85rem !important;
+  color: #cbd5e1 !important;
+  font-weight: 500 !important;
+  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+[data-sidebar="menu-button"]:hover:not([data-active="true"]) {
+  background: rgba(255, 255, 255, 0.08) !important;
+  color: #ffffff !important;
+  transform: translateX(3px) !important;
+}
+
+/* Active Navigation Item (Voice Agents, etc.) */
+[data-sidebar="menu-button"][data-active="true"],
+a[aria-current="page"] {
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.32) 0%, rgba(168, 85, 247, 0.32) 100%) !important;
+  border: 1px solid rgba(165, 180, 252, 0.45) !important;
+  color: #ffffff !important;
+  font-weight: 700 !important;
+  box-shadow: 0 0 25px rgba(99, 102, 241, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.28) !important;
+  border-radius: 0.85rem !important;
+  transform: translateX(3px) !important;
+}
+
+/* 3. High-Impact Typography & Page Headers */
+h1, .text-3xl, .text-2xl {
+  background: linear-gradient(135deg, #ffffff 40%, #c7d2fe 75%, #a855f7 100%) !important;
+  -webkit-background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+  font-weight: 800 !important;
+  letter-spacing: -0.02em !important;
+}
+
+h2, .text-xl {
+  color: #f1f5f9 !important;
+  font-weight: 700 !important;
+  letter-spacing: -0.01em !important;
+}
+
+/* 4. Action Buttons (Header & Secondary) */
+button[variant="outline"],
+.btn-outline,
+button:has(svg):not([class*="bg-primary"]):not([class*="border-rose"]):not([class*="text-rose"]) {
+  background: rgba(24, 32, 68, 0.55) !important;
+  backdrop-filter: blur(16px) !important;
+  -webkit-backdrop-filter: blur(16px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.14) !important;
+  color: #e2e8f0 !important;
+  font-weight: 600 !important;
+  border-radius: 0.8rem !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.15) !important;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+button[variant="outline"]:hover,
+.btn-outline:hover {
+  background: rgba(99, 102, 241, 0.25) !important;
+  border-color: rgba(165, 180, 252, 0.5) !important;
+  color: #ffffff !important;
+  box-shadow: 0 6px 24px rgba(99, 102, 241, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.25) !important;
+  transform: translateY(-1.5px) !important;
+}
+
+/* Primary Flagship CTA (+ Create Agent) */
+button[class*="bg-primary"],
+.btn-primary,
+button:has(.upload):not([variant="outline"]),
+[data-slot="button"][data-variant="default"] {
+  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #ec4899 100%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.3) !important;
+  box-shadow: 0 4px 22px rgba(139, 92, 246, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.4) !important;
+  color: #ffffff !important;
+  font-weight: 700 !important;
+  border-radius: 0.85rem !important;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+button[class*="bg-primary"]:hover,
+.btn-primary:hover,
+[data-slot="button"][data-variant="default"]:hover {
+  filter: brightness(1.15) !important;
+  box-shadow: 0 8px 30px rgba(236, 72, 153, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.5) !important;
+  transform: translateY(-2px) !important;
+}
+
+/* 5. True Glassmorphic Tables & Cards */
+.card,
+[data-slot="card"],
+div[class*="rounded-xl border"][class*="bg-card"],
+div[class*="rounded-2xl border"] {
+  background: rgba(14, 20, 48, 0.65) !important;
+  backdrop-filter: blur(28px) saturate(190%) !important;
+  -webkit-backdrop-filter: blur(28px) saturate(190%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.45), 0 0 35px rgba(99, 102, 241, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.18) !important;
+  border-radius: 1.25rem !important;
+  overflow: hidden !important;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+/* Table Header */
+thead,
+tr:has(th) {
+  background: rgba(255, 255, 255, 0.04) !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+th {
+  color: #94a3b8 !important;
+  font-weight: 700 !important;
+  font-size: 0.8rem !important;
+  letter-spacing: 0.08em !important;
+  text-transform: uppercase !important;
+  padding: 1.1rem 1.25rem !important;
+}
+
+/* Table Body Rows */
+tbody tr {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06) !important;
+  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+tbody tr:hover {
+  background: linear-gradient(90deg, rgba(99, 102, 241, 0.14) 0%, rgba(168, 85, 247, 0.14) 50%, rgba(56, 189, 248, 0.09) 100%) !important;
+  box-shadow: inset 0 0 24px rgba(99, 102, 241, 0.18) !important;
+}
+
+td {
+  padding: 1.15rem 1.25rem !important;
+  color: #f1f5f9 !important;
+}
+
+/* ID Micro-badge */
+td:first-child,
+.agent-id-badge {
+  font-family: var(--font-mono), monospace !important;
+  color: #c7d2fe !important;
+  font-weight: 700 !important;
+}
+
+/* Agent Name Highlight */
+td:nth-child(2) {
+  color: #ffffff !important;
+  font-weight: 600 !important;
+  font-size: 0.98rem !important;
+}
+
+/* Created At Date */
+td:nth-child(3) {
+  color: #cbd5e1 !important;
+  font-size: 0.88rem !important;
+}
+
+/* Total Runs Radiant Pill */
+span[class*="rounded-full"][class*="bg-muted"],
+td span:has(+ span),
+td .runs-badge {
+  background: linear-gradient(135deg, rgba(6, 182, 212, 0.22) 0%, rgba(99, 102, 241, 0.22) 100%) !important;
+  border: 1px solid rgba(56, 189, 248, 0.45) !important;
+  color: #38bdf8 !important;
+  font-weight: 800 !important;
+  padding: 0.35rem 0.85rem !important;
+  border-radius: 9999px !important;
+  box-shadow: 0 0 16px rgba(56, 189, 248, 0.25) !important;
+  font-size: 0.85rem !important;
+}
+
+/* Action Buttons inside Table */
+/* Edit Button */
+button:has(svg.lucide-pencil),
+button:has(svg[class*="pencil"]) {
+  background: rgba(14, 165, 233, 0.12) !important;
+  border: 1px solid rgba(56, 189, 248, 0.35) !important;
+  color: #7dd3fc !important;
+  font-weight: 600 !important;
+  border-radius: 0.65rem !important;
+  transition: all 0.2s ease !important;
+}
+
+button:has(svg.lucide-pencil):hover,
+button:has(svg[class*="pencil"]):hover {
+  background: rgba(14, 165, 233, 0.25) !important;
+  border-color: rgba(56, 189, 248, 0.6) !important;
+  color: #ffffff !important;
+  box-shadow: 0 0 18px rgba(56, 189, 248, 0.35) !important;
+  transform: translateY(-1px) !important;
+}
+
+/* Archive Button */
+button:has(svg.lucide-archive),
+button:has(svg[class*="archive"]) {
+  background: rgba(245, 158, 11, 0.12) !important;
+  border: 1px solid rgba(251, 191, 36, 0.35) !important;
+  color: #fde68a !important;
+  font-weight: 600 !important;
+  border-radius: 0.65rem !important;
+  transition: all 0.2s ease !important;
+}
+
+button:has(svg.lucide-archive):hover,
+button:has(svg[class*="archive"]):hover {
+  background: rgba(245, 158, 11, 0.25) !important;
+  border-color: rgba(251, 191, 36, 0.6) !important;
+  color: #ffffff !important;
+  box-shadow: 0 0 18px rgba(245, 158, 11, 0.35) !important;
+  transform: translateY(-1px) !important;
+}
+
+/* Delete Button */
+button[class*="border-rose"],
+button:has(span:contains("🗑️")),
+button[title*="delete"],
+button[title*="Delete"] {
+  background: rgba(244, 63, 94, 0.14) !important;
+  border: 1px solid rgba(244, 63, 94, 0.4) !important;
+  color: #fda4af !important;
+  font-weight: 600 !important;
+  border-radius: 0.65rem !important;
+  box-shadow: 0 2px 10px rgba(244, 63, 94, 0.2) !important;
+  transition: all 0.2s ease !important;
+}
+
+button[class*="border-rose"]:hover,
+button[title*="delete"]:hover,
+button[title*="Delete"]:hover {
+  background: rgba(244, 63, 94, 0.28) !important;
+  border-color: rgba(244, 63, 94, 0.7) !important;
+  color: #ffffff !important;
+  box-shadow: 0 0 20px rgba(244, 63, 94, 0.45) !important;
+  transform: translateY(-1px) !important;
+}
+
+/* 6. Inputs & Search Fields */
+input,
+input[type="text"],
+input[type="search"] {
+  background: rgba(18, 25, 58, 0.6) !important;
+  backdrop-filter: blur(12px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.14) !important;
+  color: #ffffff !important;
+  border-radius: 0.75rem !important;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.25) !important;
+  transition: all 0.2s ease !important;
+}
+
+input:focus {
+  border-color: rgba(129, 140, 248, 0.6) !important;
+  box-shadow: 0 0 20px rgba(99, 102, 241, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.1) !important;
+  outline: none !important;
+}
+
+/* 7. Dropdown & Context Menus */
+[data-slot="dropdown-menu-content"],
+div[role="menu"] {
+  background: rgba(12, 17, 42, 0.9) !important;
+  backdrop-filter: blur(28px) saturate(200%) !important;
+  -webkit-backdrop-filter: blur(28px) saturate(200%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.6), 0 0 30px rgba(99, 102, 241, 0.2) !important;
+  border-radius: 1rem !important;
+}
+
+[data-slot="dropdown-menu-item"],
+div[role="menuitem"] {
+  color: #cbd5e1 !important;
+  border-radius: 0.5rem !important;
+  transition: all 0.15s ease !important;
+}
+
+[data-slot="dropdown-menu-item"]:hover,
+div[role="menuitem"]:hover {
+  background: rgba(99, 102, 241, 0.25) !important;
+  color: #ffffff !important;
+}
+
+/* 8. Dialog & Modal Popups */
+[data-slot="dialog-content"],
+div[role="dialog"] {
+  background: rgba(12, 16, 40, 0.92) !important;
+  backdrop-filter: blur(32px) saturate(200%) !important;
+  -webkit-backdrop-filter: blur(32px) saturate(200%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.18) !important;
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.7), 0 0 45px rgba(139, 92, 246, 0.25) !important;
+  border-radius: 1.5rem !important;
+}
+
+/* 9. Scrollbar Polish */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(8, 11, 30, 0.6);
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(99, 102, 241, 0.35);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(139, 92, 246, 0.6);
+}
+

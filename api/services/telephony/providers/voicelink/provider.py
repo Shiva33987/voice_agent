@@ -1,0 +1,864 @@
+"""
+VoiceLink implementation of the TelephonyProvider interface.
+
+VoiceLink is an Indian reseller telephony platform. Outbound dials go
+through ``POST /v1/add_lead``; VoiceLink then connects back to our
+WebSocket endpoint for media (Twilio-media-streams-style JSON events,
+G.711 A-law 8 kHz) and POSTs nested-JSON call-lifecycle events to our
+webhook route.
+
+Targets the org-scoped telephony WebSocket contract Dograh shipped
+2026-09-04 (``dograh-hq/dograh@b1fc4e51``): the shared media WS route is
+``/ws/{workflow_id}/{organization_id}/{workflow_run_id}[/{token}]`` — the
+middle segment is the tenant, not the workflow owner — and
+``ws_auth.build_media_ws_url`` is the canonical way to build it (also picks
+up the optional HMAC capability token for free, backward-compatible when
+``TELEPHONY_WS_TOKEN_SECRET`` is unset). See ``references/integration-map.md``.
+"""
+
+import json
+import re
+from contextlib import asynccontextmanager
+from typing import TYPE_CHECKING, Any, AsyncIterator, Dict, List, Optional, Tuple
+
+import aiohttp
+from fastapi import HTTPException, WebSocketDisconnect
+from loguru import logger
+
+from api.enums import WorkflowRunMode
+from api.services.telephony import ws_auth
+from api.services.telephony.base import (
+    CallInitiationResult,
+    NormalizedInboundData,
+    ProviderSyncResult,
+    TelephonyProvider,
+)
+from api.utils.common import get_backend_endpoints
+from api.utils.telephony_address import normalize_telephony_address
+
+if TYPE_CHECKING:
+    from fastapi import WebSocket
+
+
+def normalize_customer_number(raw: str) -> str:
+    """Normalize a destination number to the bare 10-digit local form.
+
+    VoiceLink's carrier requires ``customer_number`` to be the bare local
+    number — a 91-prefixed 12-digit number fails at the carrier with Q.850
+    cause 38 ("Network out of order"). Strips all non-digits, then:
+
+    - 12 digits starting with "91" → drop the country code
+    - 11 digits starting with "0" → drop the trunk prefix
+
+    Args:
+        raw: Destination number in any common form
+            (e.g. "+91 73404 00524", "917340400524", "07340400524").
+
+    Returns:
+        The bare local number (e.g. "7340400524").
+    """
+    digits = re.sub(r"\D", "", raw or "")
+    if len(digits) == 12 and digits.startswith("91"):
+        return digits[2:]
+    if len(digits) == 11 and digits.startswith("0"):
+        return digits[1:]
+    return digits
+
+
+# VoiceLink webhook event → normalized status understood by
+# api.services.telephony.status_processor._process_status_update.
+_EVENT_STATUS = {
+    "call.initiated": "initiated",
+    "call.ringing": "ringing",
+    "call.answered": "in-progress",
+    "call.completed": "completed",
+    "call.ended": "completed",
+    "call.failed": "failed",
+}
+
+# Q.850 causes VoiceLink reports on calls that never connected. It sends a
+# no-answer as ``call.failed`` (cause 19) or as a plain ``call.ended`` /
+# ``call.completed`` (cause 16 with no ``answeredAt``), so the event name alone
+# can't tell a no-answer from a real failure, and only busy / no-answer are
+# retried by campaigns.
+_TERMINAL_EVENTS = frozenset({"call.completed", "call.ended", "call.failed"})
+_BUSY_CAUSES = frozenset({17, 21})  # user busy, call rejected
+_NO_ANSWER_CAUSES = frozenset({16, 18, 19})  # cleared while ringing, no answer
+
+
+def _hangup_cause_code(call: Dict[str, Any]) -> Optional[int]:
+    """Leading Q.850 code of ``hangupCause`` ("19 - User alerting..." -> 19)."""
+    cause = str(call.get("hangupCause") or "").strip()
+    code = cause.split(" ", 1)[0].split("-", 1)[0].strip()
+    return int(code) if code.isdigit() else None
+
+
+def _unanswered_status(call: Dict[str, Any]) -> str:
+    """Status for a call that ended without ever being answered.
+
+    The Q.850 cause decides when present: VoiceLink sets ``callStatus`` to
+    "NO ANSWER" on every unanswered call, including unallocated numbers and
+    network failures, so it is only a fallback.
+    """
+    code = _hangup_cause_code(call)
+    if code is not None:
+        if code in _BUSY_CAUSES:
+            return "busy"
+        if code in _NO_ANSWER_CAUSES:
+            return "no-answer"
+        return "failed"
+    call_status = str(call.get("callStatus") or "").upper()
+    if "BUSY" in call_status:
+        return "busy"
+    if "NO ANSWER" in call_status:
+        return "no-answer"
+    return "failed"
+
+
+# Identity type stamped on a VoiceLink run's ``initial_context`` so the
+# transfer tool takes its "external PBX owns the customer leg" path: VoiceLink
+# moves the caller itself, and Dograh only has to hand off and drop its leg.
+TRANSFER_IDENTITY_TYPE = "voicelink"
+
+# Live media sockets, keyed by workflow run id. VoiceLink's transfer is an
+# in-band WebSocket event, but the transfer tool reaches the provider through a
+# fresh instance with no handle on the call. The pipeline runs inside the
+# WebSocket handler's own coroutine, so the socket and the tool call always
+# share a process.
+_ACTIVE_SOCKETS: Dict[int, "WebSocket"] = {}
+
+
+@asynccontextmanager
+async def transferable_call(
+    websocket: "WebSocket", workflow_run_id: int
+) -> AsyncIterator[None]:
+    """Make a live VoiceLink call transferable for the duration of the block.
+
+    Registers the media socket and stamps the run's transfer identity. If the
+    identity can't be stored the call still runs; the transfer tool then just
+    reports the transfer as unavailable.
+    """
+    from api.db import db_client
+
+    _ACTIVE_SOCKETS[workflow_run_id] = websocket
+    try:
+        await db_client.update_workflow_run(
+            run_id=workflow_run_id,
+            initial_context={
+                "external_pbx_call": {
+                    "type": TRANSFER_IDENTITY_TYPE,
+                    "workflow_run_id": workflow_run_id,
+                }
+            },
+        )
+    except Exception as e:
+        logger.warning(
+            f"[run {workflow_run_id}] Could not stamp VoiceLink transfer "
+            f"identity; transfers unavailable for this call: {e}"
+        )
+    try:
+        yield
+    finally:
+        if _ACTIVE_SOCKETS.get(workflow_run_id) is websocket:
+            del _ACTIVE_SOCKETS[workflow_run_id]
+
+
+class VoiceLinkProvider(TelephonyProvider):
+    """
+    VoiceLink implementation of TelephonyProvider.
+
+    Call-control style: ``add_lead`` queues the dial and carries our
+    ``websocket_url`` (media) and ``webhook_url`` (call events) inline, so
+    there is no markup/answer-URL step.
+    """
+
+    PROVIDER_NAME = WorkflowRunMode.VOICELINK.value
+    WEBHOOK_ENDPOINT = "voicelink/events"
+
+    DEFAULT_API_BASE = "https://app.voicelink.co.in/api"
+
+    def __init__(self, config: Dict[str, Any]):
+        """
+        Initialize VoiceLinkProvider with configuration.
+
+        Args:
+            config: Dictionary containing:
+                - api_base: VoiceLink API base URL
+                - username / password: login credentials (enable token refresh)
+                - bearer_token: optional static bearer token
+                - did_number: optional caller-id fallback (not a card field)
+                - from_numbers: DID addresses for this config — the telephony
+                  factory fills this from the active ``telephony_phone_numbers``
+                  rows, and the campaign dispatcher reads it to build the
+                  outbound caller-id pool. Not a card field.
+
+            The Settings → Telephony card only collects credentials; the DID(s)
+            are managed as phone-number rows on the config detail page and
+            arrive here via ``from_numbers``.
+        """
+        self.api_base = (config.get("api_base") or self.DEFAULT_API_BASE).rstrip("/")
+        self.username = config.get("username")
+        self.password = config.get("password")
+        self.bearer_token = config.get("bearer_token")
+        self.did_number = config.get("did_number")
+        self.from_numbers = config.get("from_numbers", [])
+
+        # Handle both single number (string) and multiple numbers (list)
+        if isinstance(self.from_numbers, str):
+            self.from_numbers = [self.from_numbers]
+
+        self._access_token: Optional[str] = self.bearer_token or None
+
+    # ======== AUTH / HTTP HELPERS ========
+
+    async def _login(self) -> str:
+        """Obtain a bearer token via /v1/auth/login. Never logs the password."""
+        if not self.username or not self.password:
+            raise HTTPException(
+                status_code=401,
+                detail=(
+                    "VoiceLink token rejected and no username/password "
+                    "configured for re-login"
+                ),
+            )
+
+        endpoint = f"{self.api_base}/v1/auth/login"
+        async with aiohttp.ClientSession() as session:
+            async with session.post(
+                endpoint,
+                json={"username": self.username, "password": self.password},
+                headers={"Accept": "application/json"},
+            ) as response:
+                body = await response.text()
+                if response.status not in (200, 201):
+                    logger.error(
+                        f"VoiceLink login failed for user {self.username}: "
+                        f"HTTP {response.status}"
+                    )
+                    raise HTTPException(
+                        status_code=response.status,
+                        detail=f"VoiceLink login failed: HTTP {response.status}",
+                    )
+                try:
+                    data = json.loads(body)
+                except json.JSONDecodeError:
+                    raise HTTPException(
+                        status_code=502,
+                        detail="VoiceLink login returned a non-JSON response",
+                    )
+
+        token = (data.get("data") or {}).get("access_token")
+        if not token:
+            raise HTTPException(
+                status_code=502,
+                detail="VoiceLink login response missing data.access_token",
+            )
+
+        logger.info(f"VoiceLink login succeeded for user {self.username}")
+        self._access_token = token
+        return token
+
+    async def _send_request(
+        self,
+        method: str,
+        url: str,
+        payload: Optional[Dict[str, Any]],
+        token: str,
+    ) -> Tuple[int, Any]:
+        """Single HTTP exchange against the VoiceLink API."""
+        headers = {
+            "Authorization": f"Bearer {token}",
+            "Content-Type": "application/json",
+            # VoiceLink is a Laravel API — without this it renders HTML error
+            # pages (and 302s to a login page) instead of JSON on 4xx/5xx.
+            "Accept": "application/json",
+        }
+        async with aiohttp.ClientSession() as session:
+            async with session.request(
+                method, url, json=payload, headers=headers
+            ) as response:
+                body = await response.text()
+                try:
+                    data = json.loads(body)
+                except json.JSONDecodeError:
+                    data = {"raw": body}
+                return response.status, data
+
+    async def _api_request(
+        self,
+        method: str,
+        path: str,
+        payload: Optional[Dict[str, Any]] = None,
+    ) -> Tuple[int, Any]:
+        """Authenticated VoiceLink API request with one 401 re-login retry."""
+        token = self._access_token or await self._login()
+        url = f"{self.api_base}{path}"
+
+        status, data = await self._send_request(method, url, payload, token)
+        if status == 401 and self.username and self.password:
+            logger.info("VoiceLink token rejected (401); re-logging in and retrying")
+            token = await self._login()
+            status, data = await self._send_request(method, url, payload, token)
+        return status, data
+
+    # ======== OUTBOUND CALL ========
+
+    async def initiate_call(
+        self,
+        to_number: str,
+        webhook_url: str,
+        workflow_run_id: Optional[int] = None,
+        from_number: Optional[str] = None,
+        **kwargs: Any,
+    ) -> CallInitiationResult:
+        """
+        Initiate an outbound call via VoiceLink ``POST /v1/add_lead``.
+
+        VoiceLink differences from REST providers like Twilio:
+        - ``customer_number`` must be the bare 10-digit local number (a
+          91-prefixed number fails at the carrier with Q.850 cause 38).
+        - ``did_number`` (the caller id) comes from the ``from_number``
+          argument and keeps its registered form (e.g. "919484959244").
+        - The response carries an ``outbound_queue_id`` only — the real call
+          id (uuid) arrives later via webhook events and the WS start event.
+        - ``websocket_url``/``webhook_url`` are passed inline per call, so
+          the answer-URL style ``webhook_url`` argument is unused.
+        """
+        if not self.validate_config():
+            raise ValueError("VoiceLink provider not properly configured")
+
+        workflow_id = kwargs.get("workflow_id")
+        organization_id = kwargs.get("organization_id")
+        if workflow_id is None or organization_id is None or workflow_run_id is None:
+            raise ValueError(
+                "VoiceLink initiate_call requires workflow_id, organization_id "
+                "and workflow_run_id to build the media WebSocket URL"
+            )
+
+        customer_number = normalize_customer_number(to_number)
+        if len(customer_number) != 10:
+            logger.warning(
+                f"VoiceLink customer_number normalized to "
+                f"{len(customer_number)} digits (expected 10): "
+                f"{customer_number!r} from {to_number!r}"
+            )
+
+        # DID keeps its registered (91-prefixed) form; only strip formatting.
+        # Source order: the per-call from_number (campaign dispatcher pool),
+        # then the stored did_number, then the first configured from_number.
+        did_source = (
+            from_number
+            or self.did_number
+            or (self.from_numbers[0] if self.from_numbers else "")
+        )
+        did_number = re.sub(r"\D", "", did_source)
+        if not did_number:
+            # VoiceLink's POST /v1/add_lead *requires* a non-empty did_number
+            # (verified against the live API) — fail with a clear message
+            # rather than sending "" and getting an opaque 422.
+            raise ValueError(
+                "VoiceLink outbound call has no caller id: add a DID / phone "
+                "number to this telephony config (config detail page) or pass "
+                "an explicit from_number. VoiceLink's add_lead rejects an empty "
+                "did_number."
+            )
+        logger.info(f"Selected VoiceLink DID {did_number} for outbound call")
+
+        backend_endpoint, wss_backend_endpoint = await get_backend_endpoints()
+
+        websocket_url = ws_auth.build_media_ws_url(
+            wss_backend_endpoint, workflow_id, organization_id, workflow_run_id
+        )
+        events_url = (
+            f"{backend_endpoint}/api/v1/telephony/voicelink/events/{workflow_run_id}"
+        )
+
+        payload = {
+            "did_number": did_number,
+            "customer_number": customer_number,
+            "custom_parameters": json.dumps(
+                {
+                    "workflow_id": workflow_id,
+                    "organization_id": organization_id,
+                    "workflow_run_id": workflow_run_id,
+                }
+            ),
+            "websocket_url": websocket_url,
+            "webhook_url": events_url,
+        }
+
+        logger.info(
+            f"VoiceLink add_lead payload: did_number={did_number}, "
+            f"customer_number={customer_number}, websocket_url={websocket_url}, "
+            f"webhook_url={events_url}"
+        )
+
+        status, data = await self._api_request("POST", "/v1/add_lead", payload)
+
+        if (
+            status not in (200, 201)
+            or not isinstance(data, dict)
+            or not data.get("status")
+        ):
+            logger.error(f"VoiceLink add_lead failed: HTTP {status} body={data}")
+            raise HTTPException(
+                status_code=status if status >= 400 else 502,
+                detail=f"Failed to initiate VoiceLink call: HTTP {status} {data}",
+            )
+
+        lead = data.get("data") or {}
+        outbound_queue_id = lead.get("outbound_queue_id")
+
+        # No call id exists at originate time — the provider call id (uuid)
+        # arrives via webhook events / the WS start event. Use the queue id
+        # as the provisional identifier.
+        call_id = (
+            str(outbound_queue_id)
+            if outbound_queue_id is not None
+            else f"voicelink-run-{workflow_run_id}"
+        )
+
+        logger.info(
+            f"VoiceLink call queued successfully. outbound_queue_id={outbound_queue_id}"
+        )
+
+        return CallInitiationResult(
+            call_id=call_id,
+            status="queued",
+            caller_number=did_number,
+            provider_metadata={
+                "outbound_queue_id": outbound_queue_id,
+                "bot_id": lead.get("bot_id"),
+                "client_id": lead.get("client_id"),
+                "carrier_id": lead.get("carrier_id"),
+            },
+            raw_response=data,
+        )
+
+    async def get_call_status(self, call_id: str) -> Dict[str, Any]:
+        """
+        VoiceLink does not expose a per-call status REST endpoint; status
+        arrives via webhook events on ``webhook_url``.
+        """
+        return {"call_id": call_id, "status": "unknown"}
+
+    async def get_available_phone_numbers(self) -> List[str]:
+        """DIDs for this config — the telephony factory populates
+        ``from_numbers`` from the active ``telephony_phone_numbers`` rows."""
+        if self.from_numbers:
+            return self.from_numbers
+        return [self.did_number] if self.did_number else []
+
+    def validate_config(self) -> bool:
+        """Validate VoiceLink configuration. Credentials are required; a DID
+        (from a phone-number row or the optional ``did_number``) is required
+        for outbound, which VoiceLink's add_lead enforces."""
+        has_auth = bool(self.bearer_token or (self.username and self.password))
+        has_did = bool(self.did_number or self.from_numbers)
+        return bool(self.api_base and has_auth and has_did)
+
+    async def verify_webhook_signature(
+        self, url: str, params: Dict[str, Any], signature: str
+    ) -> bool:
+        """VoiceLink webhooks are unsigned — no verification possible."""
+        return True
+
+    async def get_webhook_response(
+        self, workflow_id: int, organization_id: int, workflow_run_id: int
+    ) -> str:
+        """Not used for VoiceLink — the media WebSocket URL is passed inline
+        with the ``add_lead`` request."""
+        return ""
+
+    async def get_call_cost(self, call_id: str) -> Dict[str, Any]:
+        """VoiceLink does not expose per-call cost via API."""
+        return {
+            "cost_usd": 0.0,
+            "duration": 0,
+            "status": "unknown",
+            "raw_response": {},
+        }
+
+    def parse_status_callback(self, data: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Parse a VoiceLink call-event webhook into the generic format.
+
+        VoiceLink POSTs nested camelCase JSON::
+
+            {"event": "call.answered", "timestamp": ..., "call": {
+                "id": "<uuid>", "direction": "outbound", "from": ..., "to": ...,
+                "status": ..., "hangupCause": "16", "durationSec": 42, ...}}
+        """
+        call = data.get("call") or {}
+        event = (data.get("event") or "").lower()
+        status = _EVENT_STATUS.get(event, event)
+        # ``answeredAt`` is present-but-null on every unanswered call; an
+        # absent key means an older payload, so keep the plain event mapping.
+        if (
+            event in _TERMINAL_EVENTS
+            and "answeredAt" in call
+            and not call["answeredAt"]
+        ):
+            status = _unanswered_status(call)
+
+        duration = call.get("durationSec")
+        # Field name unconfirmed upstream — check both spellings defensively.
+        recording_url = call.get("recordingUrl") or call.get("recording_url")
+
+        extra = dict(data)
+        if recording_url:
+            extra["recording_url"] = recording_url
+
+        return {
+            "call_id": call.get("id", ""),
+            "status": status,
+            "from_number": call.get("from"),
+            "to_number": call.get("to"),
+            "direction": call.get("direction"),
+            "duration": str(duration) if duration is not None else None,
+            "extra": extra,
+        }
+
+    async def handle_websocket(
+        self,
+        websocket: "WebSocket",
+        workflow_id: int,
+        organization_id: int,
+        workflow_run_id: int,
+    ) -> None:
+        """
+        Handle the VoiceLink media WebSocket connection.
+
+        Called by the shared dispatcher for OUTBOUND calls (VoiceLink dials
+        back the ``websocket_url`` from ``initiate_call``, which routes through
+        the generic ``/ws/{workflow_id}/{organization_id}/{workflow_run_id}``
+        endpoint). ``organization_id`` is the tenant the run is scoped to —
+        it is not a user id (the base class deliberately does not pass the
+        workflow owner here; see ``TelephonyProvider.handle_websocket``).
+
+        VoiceLink connects to our ``websocket_url`` and sends:
+        1. ``connected`` event on WebSocket open
+        2. ``start`` event with stream_sid, call_sid, custom_parameters and
+           media_format (audio/alaw @ 8000)
+        3. ``media`` events with base64 A-law audio
+        """
+        from api.services.pipecat.run_pipeline import run_pipeline_telephony
+
+        try:
+            first_msg = json.loads(await websocket.receive_text())
+            logger.debug(f"Received the first message: {first_msg}")
+
+            if first_msg.get("event") == "connected":
+                start_msg = json.loads(await websocket.receive_text())
+            else:
+                start_msg = first_msg
+
+            if start_msg.get("event") != "start":
+                logger.error(f"Expected 'start' event, got: {start_msg.get('event')}")
+                await websocket.close(code=4400, reason="Expected start event")
+                return
+
+            start_data = start_msg.get("start", {}) or {}
+            stream_sid = (
+                start_data.get("stream_sid")
+                or start_data.get("streamSid")
+                or start_msg.get("stream_sid")
+                or ""
+            )
+            call_sid = start_data.get("call_sid") or start_data.get("callSid") or ""
+
+            if not stream_sid:
+                logger.error(f"Missing stream_sid in start event: {start_data}")
+                await websocket.close(code=4400, reason="Missing stream_sid")
+                return
+
+            logger.info(
+                f"[run {workflow_run_id}] VoiceLink stream started - "
+                f"stream_sid={stream_sid}, call_sid={call_sid}"
+            )
+
+            async with transferable_call(websocket, workflow_run_id):
+                await run_pipeline_telephony(
+                    websocket,
+                    provider_name=self.PROVIDER_NAME,
+                    workflow_id=workflow_id,
+                    workflow_run_id=workflow_run_id,
+                    organization_id=organization_id,
+                    call_id=call_sid or stream_sid,
+                    transport_kwargs={"stream_id": stream_sid, "call_id": call_sid},
+                )
+
+            logger.info(f"[run {workflow_run_id}] VoiceLink pipeline completed")
+
+        except WebSocketDisconnect as e:
+            # VoiceLink may close the socket before sending start if the call
+            # never connects — surface as an expected end-of-call.
+            logger.info(
+                f"[run {workflow_run_id}] VoiceLink WebSocket closed before "
+                f"stream start: code={e.code}, reason={e.reason!r}"
+            )
+        except Exception as e:
+            logger.error(
+                f"[run {workflow_run_id}] Error in VoiceLink WebSocket handler: {e}"
+            )
+            raise
+
+    # ======== INBOUND CALL METHODS ========
+
+    @classmethod
+    def can_handle_webhook(
+        cls, webhook_data: Dict[str, Any], headers: Dict[str, str]
+    ) -> bool:
+        """Detect a VoiceLink *inbound* call webhook on the generic dispatcher.
+
+        VoiceLink posts nested JSON ``{"event": ..., "call": {...}}``. We only
+        claim the webhook when it is an inbound-direction call event, so the
+        per-run *outbound* event webhooks (which target
+        ``/voicelink/events/{run_id}``) are never accidentally matched here.
+        """
+        call = webhook_data.get("call")
+        if not isinstance(call, dict):
+            return False
+        if str(call.get("direction", "")).lower() != "inbound":
+            return False
+        # Require the VoiceLink-shaped envelope so we don't shadow other
+        # providers' form posts.
+        return "event" in webhook_data or "id" in call
+
+    @staticmethod
+    def parse_inbound_webhook(webhook_data: Dict[str, Any]) -> NormalizedInboundData:
+        """
+        Parse a VoiceLink event into normalized inbound format.
+
+        Inbound calls are not currently routed through VoiceLink, but the
+        nested ``call`` payload is normalized defensively. VoiceLink is
+        India-only — hardcode "IN" so local-form numbers normalize to the
+        right E.164.
+        """
+        country = "IN"
+        call = webhook_data.get("call") or {}
+        from_raw = call.get("from", "")
+        to_raw = call.get("to", "")
+        return NormalizedInboundData(
+            provider=VoiceLinkProvider.PROVIDER_NAME,
+            call_id=call.get("id", ""),
+            from_number=normalize_telephony_address(
+                from_raw, country_hint=country
+            ).canonical
+            if from_raw
+            else "",
+            to_number=normalize_telephony_address(
+                to_raw, country_hint=country
+            ).canonical
+            if to_raw
+            else "",
+            direction="inbound",
+            call_status=call.get("status", ""),
+            account_id=None,
+            from_country=country,
+            to_country=country,
+            raw_data=webhook_data,
+        )
+
+    @staticmethod
+    def validate_account_id(config_data: dict, webhook_account_id: str) -> bool:
+        """VoiceLink inbound webhooks carry no account id; the DID match is the
+        authorization boundary."""
+        return True
+
+    async def verify_inbound_signature(
+        self,
+        url: str,
+        webhook_data: Dict[str, Any],
+        headers: Dict[str, str],
+        body: str = "",
+    ) -> bool:
+        """VoiceLink webhooks are unsigned — nothing to verify."""
+        return True
+
+    async def start_inbound_stream(
+        self,
+        *,
+        websocket_url: str,
+        workflow_run_id: int,
+        normalized_data,
+        backend_endpoint: str,
+    ):
+        """Answer a VoiceLink inbound call by returning the media WebSocket URL.
+
+        VoiceLink has no markup language. For inbound it expects a JSON body
+        telling it where to stream media (mirroring how add_lead carries
+        ``websocket_url`` inline for outbound). We also hand it the per-run
+        events URL so call-lifecycle events land on the same
+        ``/voicelink/events`` route used for outbound.
+
+        NOTE: the exact response keys VoiceLink expects for an inbound answer
+        are unconfirmed upstream — this mirrors add_lead's field names and is
+        the best-available reference. Adjust after capturing a real inbound
+        call (see provider docstring / deploy notes).
+        """
+        from fastapi import Response
+
+        events_url = (
+            f"{backend_endpoint}/api/v1/telephony/voicelink/events/{workflow_run_id}"
+        )
+        body = {
+            "status": "ok",
+            "action": "stream",
+            "websocket_url": websocket_url,
+            "webhook_url": events_url,
+            "media_format": {"encoding": "audio/alaw", "sample_rate": 8000},
+        }
+        logger.info(
+            f"[run {workflow_run_id}] VoiceLink inbound answer: "
+            f"websocket_url={websocket_url} webhook_url={events_url}"
+        )
+        return Response(content=json.dumps(body), media_type="application/json")
+
+    @staticmethod
+    def generate_error_response(error_type: str, message: str) -> tuple:
+        """Generate a VoiceLink-specific error response (JSON — VoiceLink has
+        no markup language)."""
+        from fastapi import Response
+
+        return Response(
+            content=json.dumps({"status": "error", "message": message}),
+            media_type="application/json",
+        )
+
+    @staticmethod
+    def generate_validation_error_response(error_type) -> tuple:
+        """Generate a VoiceLink-specific validation error response."""
+        from fastapi import Response
+
+        from api.errors.telephony_errors import TELEPHONY_ERROR_MESSAGES, TelephonyError
+
+        message = TELEPHONY_ERROR_MESSAGES.get(
+            error_type, TELEPHONY_ERROR_MESSAGES[TelephonyError.GENERAL_AUTH_FAILED]
+        )
+
+        return Response(
+            content=json.dumps({"status": "error", "message": message}),
+            media_type="application/json",
+        )
+
+    # ======== CALL TRANSFER METHODS ========
+
+    async def transfer_external_pbx_call(
+        self,
+        *,
+        identity: Dict[str, Any],
+        destination: str,
+        field_updates: Optional[Dict[str, str]] = None,
+        disposition: Optional[str] = None,
+    ) -> Optional[Dict[str, Any]]:
+        """Blind-transfer the caller with VoiceLink's native ``transfer`` event.
+
+        VoiceLink routes the live call to ``target`` itself, so a successful
+        send is the whole handoff: the transfer tool then marks the run
+        transferred and drops our media leg. ``field_updates`` and
+        ``disposition`` are PBX lead-record writes, which VoiceLink has no
+        equivalent of.
+        """
+        if not identity:
+            return None
+        identity_type = identity.get("type") or identity.get("provider")
+        if identity_type != TRANSFER_IDENTITY_TYPE:
+            return None
+
+        workflow_run_id = identity.get("workflow_run_id")
+        websocket = _ACTIVE_SOCKETS.get(workflow_run_id)
+        if websocket is None:
+            logger.error(
+                f"[run {workflow_run_id}] VoiceLink transfer: no live media "
+                f"socket for this run"
+            )
+            return {
+                "status": "failed",
+                "action": "external_pbx_transfer",
+                "message": "I'm sorry, I couldn't complete the transfer.",
+                "reason": "voicelink_call_not_active",
+            }
+
+        target = normalize_customer_number(destination)
+        if not target:
+            return {
+                "status": "failed",
+                "action": "external_pbx_transfer",
+                "message": "I'm sorry, I couldn't complete the transfer.",
+                "reason": "voicelink_invalid_target",
+            }
+        if len(target) != 10:
+            logger.warning(
+                f"[run {workflow_run_id}] VoiceLink transfer target normalized "
+                f"to {len(target)} digits (expected 10)"
+            )
+
+        try:
+            await websocket.send_text(
+                json.dumps({"event": "transfer", "target": target})
+            )
+        except Exception as e:
+            logger.error(f"[run {workflow_run_id}] VoiceLink transfer send failed: {e}")
+            return {
+                "status": "failed",
+                "action": "external_pbx_transfer",
+                "message": "I'm sorry, I couldn't complete the transfer.",
+                "reason": "voicelink_transfer_send_failed",
+            }
+
+        logger.info(
+            f"[run {workflow_run_id}] VoiceLink transfer sent to ***{target[-4:]}"
+        )
+        return {
+            "status": "success",
+            "action": "external_pbx_transfer",
+            "message": "Transferring your call now.",
+            "reason": None,
+        }
+
+    async def transfer_call(
+        self,
+        destination: str,
+        transfer_id: str,
+        conference_name: str,
+        timeout: int = 30,
+        **kwargs: Any,
+    ) -> Dict[str, Any]:
+        """
+        Not used: VoiceLink transfers go through ``transfer_external_pbx_call``.
+
+        Dograh's dial-and-conference transfer needs a provider that can place
+        a second leg and bridge it; VoiceLink instead re-routes the live call
+        itself on a ``transfer`` WebSocket event.
+
+        Raises:
+            NotImplementedError: always.
+        """
+        raise NotImplementedError(
+            "VoiceLink transfers use the native transfer event "
+            "(transfer_external_pbx_call)"
+        )
+
+    def supports_transfers(self) -> bool:
+        """
+        No dial-and-conference transfers; see ``transfer_external_pbx_call``.
+
+        Returns:
+            False - the conference transfer path is not supported
+        """
+        return False
+
+    # ======== PHONE NUMBER OWNERSHIP ========
+
+    async def validate_phone_number(self, address: str) -> ProviderSyncResult:
+        """Accept any DID the operator adds.
+
+        VoiceLink has no documented account-inventory API to verify DID
+        ownership against (unlike Twilio/Plivo/Telnyx's number-list
+        endpoints) — probed the live REST API directly and found nothing
+        under `/v1/dids`, `/v1/numbers`, or similar. Same PBX-managed
+        opt-out as the ARI provider: the DID match at inbound-routing time
+        is the real authorization boundary, not this check.
+        """
+        return ProviderSyncResult(ok=True)
