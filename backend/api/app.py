@@ -168,6 +168,7 @@ if DEPLOYMENT_MODE == "oss":
         "http://127.0.0.1:5174",
         "http://localhost:8000",
         "http://127.0.0.1:8000",
+        "https://inbound-agent-git-main-sravanthi9.vercel.app",
         *CORS_ALLOWED_ORIGINS,
     ]
     cors_allow_credentials = True
@@ -187,7 +188,7 @@ else:
 app.add_middleware(
     CORSMiddleware,
     allow_origins=cors_origins,
-    allow_origin_regex=r"https?://(localhost|127\.0\.0\.1)(:\d+)?",
+    allow_origin_regex=r"https?://(localhost|127\.0\.0\.1)(:\d+)?|https://.*\.vercel\.app",
     allow_credentials=cors_allow_credentials,
     allow_methods=["*"],
     allow_headers=["*"],

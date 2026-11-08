@@ -36,8 +36,8 @@ RUN --mount=type=bind,source=api/requirements.txt,target=/tmp/req.txt \
 RUN --mount=type=bind,source=pipecat,target=/tmp/pipecat,rw \
     --mount=type=cache,target=/root/.cache/uv \
     uv pip install '/tmp/pipecat[cartesia,deepgram,openai,elevenlabs,groq,google,azure,sarvam,soundfile,silero,webrtc,speechmatics,openrouter,camb,mcp,inworld,smallest,aws-nova-sonic]' \
- && uv pip uninstall opencv-python \
- && uv pip install opencv-python-headless
+    && uv pip uninstall opencv-python \
+    && uv pip install opencv-python-headless
 
 # Strip cache files, test/example dirs, and type stubs from the venv
 RUN find /opt/venv -type f -name '*.pyc' -delete && \
@@ -80,21 +80,21 @@ ARG BTBN_TAG=autobuild-2026-05-31-13-22
 ARG BTBN_REV=N-124714-g49a77d37be
 RUN set -eu ; \
     apt-get update && apt-get install -y --no-install-recommends \
-        curl ca-certificates xz-utils ; \
+    curl ca-certificates xz-utils ; \
     rm -rf /var/lib/apt/lists/* ; \
     case "${TARGETARCH}" in \
-      amd64) btbn_arch=linux64 ; \
-             sha256=ee052121296e6479325e09c6097d48e72a4af472d18c2b94388b5405dcde6cce ;; \
-      arm64) btbn_arch=linuxarm64 ; \
-             sha256=e97545305043794cdf7b698d713e29291464e0c35bb8e0f3ff1f62e4c56eedd6 ;; \
-      *) echo "unsupported TARGETARCH: ${TARGETARCH}" >&2 ; exit 1 ;; \
+    amd64) btbn_arch=linux64 ; \
+    sha256=ee052121296e6479325e09c6097d48e72a4af472d18c2b94388b5405dcde6cce ;; \
+    arm64) btbn_arch=linuxarm64 ; \
+    sha256=e97545305043794cdf7b698d713e29291464e0c35bb8e0f3ff1f62e4c56eedd6 ;; \
+    *) echo "unsupported TARGETARCH: ${TARGETARCH}" >&2 ; exit 1 ;; \
     esac ; \
     url="https://github.com/BtbN/FFmpeg-Builds/releases/download/${BTBN_TAG}/ffmpeg-${BTBN_REV}-${btbn_arch}-gpl.tar.xz" ; \
     mkdir -p /tmp/ffmpeg ; cd /tmp/ffmpeg ; \
     echo "Downloading ffmpeg (${BTBN_TAG}) from ${url}" ; \
     curl -fsSL --connect-timeout 20 --speed-limit 1024 --speed-time 30 \
-         --max-time 600 --retry 3 --retry-delay 5 --retry-all-errors \
-         -o ffmpeg.tar.xz "${url}" ; \
+    --max-time 600 --retry 3 --retry-delay 5 --retry-all-errors \
+    -o ffmpeg.tar.xz "${url}" ; \
     echo "${sha256}  ffmpeg.tar.xz" | sha256sum -c - ; \
     tar -xJf ffmpeg.tar.xz ; \
     ffmpeg_bin="$(find /tmp/ffmpeg -type f -name ffmpeg | head -n1)" ; \
@@ -110,8 +110,8 @@ FROM python:3.13-slim AS runner
 WORKDIR /app
 
 RUN groupadd --system dograh \
- && useradd --system --gid dograh --no-log-init --home-dir /app --shell /usr/sbin/nologin dograh \
- && chown dograh:dograh /app
+    && useradd --system --gid dograh --no-log-init --home-dir /app --shell /usr/sbin/nologin dograh \
+    && chown dograh:dograh /app
 
 # Static ffmpeg + ffprobe (used by audio_converter, audio_file_cache, etc.)
 COPY --from=ffmpeg-static /usr/local/bin/ffmpeg /usr/local/bin/ffmpeg
@@ -149,14 +149,14 @@ COPY --chown=dograh:dograh ./api ./api
 #   drain_web.sh             — web pod preStop hook (call-safe scale-down); see
 #     lifecycle.preStop in deploy/helm/dograh/templates/web-deployment.yaml.
 COPY --chown=dograh:dograh \
-     ./scripts/start_services_docker.sh \
-     ./scripts/run_migrate.sh \
-     ./scripts/run_web.sh \
-     ./scripts/run_arq_worker.sh \
-     ./scripts/run_ari_manager.sh \
-     ./scripts/run_campaign_orchestrator.sh \
-     ./scripts/drain_web.sh \
-     ./scripts/
+    ./scripts/start_services_docker.sh \
+    ./scripts/run_migrate.sh \
+    ./scripts/run_web.sh \
+    ./scripts/run_arq_worker.sh \
+    ./scripts/run_ari_manager.sh \
+    ./scripts/run_campaign_orchestrator.sh \
+    ./scripts/drain_web.sh \
+    ./scripts/
 
 # ts_validator Node deps (built in ts-deps stage with full node:22-slim image).
 # The validator runs as a short-lived subprocess from api/mcp_server/ts_bridge.py.

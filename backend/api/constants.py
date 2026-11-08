@@ -62,7 +62,17 @@ SERVER_IP = os.getenv("SERVER_IP", "")
 # isn't reachable from the internet, so get_backend_endpoints() resolves a running
 # Cloudflare tunnel's URL at runtime instead (see api/utils/common.py).
 BACKEND_API_ENDPOINT = (
-    os.getenv("BACKEND_API_ENDPOINT") or PUBLIC_BASE_URL or "http://localhost:8000"
+    os.getenv("BACKEND_API_ENDPOINT")
+    or PUBLIC_BASE_URL
+    or (
+        f"https://{os.getenv('RENDER_EXTERNAL_HOSTNAME')}"
+        if os.getenv("RENDER_EXTERNAL_HOSTNAME")
+        else (
+            "https://inbound-agent-46v0.onrender.com"
+            if os.getenv("PORT") == "10000"
+            else "http://localhost:8000"
+        )
+    )
 )
 UI_APP_URL = os.getenv("UI_APP_URL", "http://localhost:3010")
 

@@ -2,7 +2,11 @@ import type { Client } from '@/client/client';
 import type { CreateClientConfig } from '@/client/client.gen';
 
 export function getServerBackendUrl() {
-    return process.env.BACKEND_URL || 'http://api:8000';
+    return (
+        process.env.BACKEND_URL ||
+        process.env.NEXT_PUBLIC_BACKEND_URL ||
+        'https://inbound-agent-46v0.onrender.com'
+    );
 }
 
 /**
@@ -26,7 +30,8 @@ export function resolveBrowserBackendUrl(backendApiEndpoint?: string | null): st
     return (
         process.env.NEXT_PUBLIC_BACKEND_URL ||
         backendApiEndpoint ||
-        (typeof window !== 'undefined' ? window.location.origin : '')
+        (typeof window !== 'undefined' ? window.location.origin : '') ||
+        'https://inbound-agent-46v0.onrender.com'
     );
 }
 
