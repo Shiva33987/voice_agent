@@ -3,6 +3,8 @@ FROM python:3.12-slim AS builder
 
 WORKDIR /app
 
+ENV DEBIAN_FRONTEND=noninteractive
+
 RUN apt-get update && apt-get install -y --no-install-recommends \
     git \
     build-essential \
