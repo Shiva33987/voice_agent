@@ -76,7 +76,7 @@ export default function CallRecordingsList({ refreshKey }: { refreshKey?: number
     const [runs, setRuns] = useState<WorkflowRunUsageResponse[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState("");
-    const [activeFilter, setActiveFilter] = useState<"all" | "audio-only" | "inbound" | "outbound">("audio-only");
+    const [activeFilter, setActiveFilter] = useState<"all" | "audio-only" | "inbound" | "outbound">("all");
 
     // Audio Playback State
     const [playingRunId, setPlayingRunId] = useState<number | null>(null);

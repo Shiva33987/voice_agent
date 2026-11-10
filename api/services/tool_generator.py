@@ -328,10 +328,18 @@ async def auto_generate_tools_for_workflow(
                             ToolParameter(name="gender", type="string", description="Patient gender (Male, Female, Other).", required=False),
                             ToolParameter(name="branch", type="string", description="Preferred hospital branch (e.g. Kukatpally, Kothapet, Nanakramguda, Kurnool).", required=True),
                             ToolParameter(name="doctor_or_department", type="string", description="Department (e.g. Cardiology, Orthopedics) or doctor name.", required=False),
+                            ToolParameter(name="appointment_date", type="string", description="Desired appointment date in YYYY-MM-DD format.", required=True),
+                            ToolParameter(name="appointment_time", type="string", description="Preferred slot time (e.g. 10:30 AM).", required=True),
                             ToolParameter(name="appointment_date", type="string", description="Desired appointment date in YYYY-MM-DD format.", required=False),
                             ToolParameter(name="appointment_time", type="string", description="Preferred slot time (e.g. 10:30 AM).", required=False),
                         ],
                         body_template={
+                            "patient_name": "{{patient_name}}",
+                            "mobile_number": "{{mobile_number}}",
+                            "age": "{{age}}",
+                            "gender": "{{gender}}",
+                            "branch": "{{branch}}",
+                            "doctor_or_department": "{{doctor_or_department}}",
                             "workflow_id": workflow_id,
                             "customer_name": "{{patient_name}}",
                             "customer_phone": "{{mobile_number}}",
@@ -398,6 +406,8 @@ async def auto_generate_tools_for_workflow(
             )
         )
     else:
+        # Heuristic generation for general workflows
+        tool_requests.append(_rule_based_fallback(workflow.name))
         # Standard Inbound, Lead Qualification, & Consultation Workflow
         tool_requests.append(
             CreateToolRequest(
