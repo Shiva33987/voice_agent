@@ -4,6 +4,7 @@ set -e
 echo "Starting Inbound Voice AI Agent Backend..."
 
 # Run database migrations if DATABASE_URL is set
+if [ -n "$DATABASE_URL" ]; then
 DB_CHECK="${DATABASE_URL:-${INTERNAL_DATABASE_URL:-${POSTGRES_URL}}}"
 if [ -n "$DB_CHECK" ]; then
     echo "Running Alembic database migrations..."

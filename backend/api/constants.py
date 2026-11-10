@@ -76,6 +76,8 @@ BACKEND_API_ENDPOINT = (
 )
 UI_APP_URL = os.getenv("UI_APP_URL", "http://localhost:3010")
 
+_raw_db_url = os.getenv(
+    "DATABASE_URL", "postgresql+asyncpg://postgres:postgres@localhost:5433/dograh"
 _raw_db_url = (
     os.getenv("DATABASE_URL")
     or os.getenv("INTERNAL_DATABASE_URL")

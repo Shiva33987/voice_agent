@@ -148,16 +148,6 @@ async def health() -> HealthResponse:
         db_configured=is_db_custom,
         db_host=db_host_masked,
     )
-        deployment_mode=DEPLOYMENT_MODE,
-        auth_provider=AUTH_PROVIDER,
-        turn_enabled=ENABLE_COTURN,
-        force_turn_relay=FORCE_TURN_RELAY,
-        signup_enabled=ENABLE_SIGNUP,
-        stack_project_id=STACK_AUTH_PROJECT_ID if is_stack else None,
-        stack_publishable_client_key=(
-            STACK_PUBLISHABLE_CLIENT_KEY if is_stack else None
-        ),
-    )
 
 
 class ActiveCallsResponse(BaseModel):
