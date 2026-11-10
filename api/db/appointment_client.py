@@ -181,7 +181,6 @@ class AppointmentClient(BaseDBClient):
             conflict_res = await session.execute(conflict_stmt)
             existing = conflict_res.scalar_one_or_none()
             if existing:
-                raise ValueError(f"You already have a confirmed appointment at {appointment_time} on {appointment_date}.")
                 if notes:
                     existing.notes = f"{existing.notes or ''}\nUpdate: {notes}".strip()
                 if customer_email and not existing.customer_email:

@@ -156,12 +156,25 @@ async def handle_mps_unavailable_error(
 
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception) -> JSONResponse:
-    logger.exception(f"Unhandled exception handling {request.method} {request.url}: {exc}")
+    from fastapi import HTTPException as FastAPIHTTPException
+    from starlette.exceptions import HTTPException as StarletteHTTPException
+
     origin = request.headers.get("origin", "")
     headers = {}
     if origin:
         headers["Access-Control-Allow-Origin"] = origin
         headers["Access-Control-Allow-Credentials"] = "true"
+
+    if isinstance(exc, (FastAPIHTTPException, StarletteHTTPException)):
+        if getattr(exc, "headers", None):
+            headers.update(exc.headers)
+        return JSONResponse(
+            status_code=exc.status_code,
+            content={"detail": exc.detail},
+            headers=headers,
+        )
+
+    logger.exception(f"Unhandled exception handling {request.method} {request.url}: {exc}")
     return JSONResponse(
         status_code=500,
         content={"detail": f"Internal server error: {str(exc)}"},
@@ -175,14 +188,17 @@ if DEPLOYMENT_MODE == "oss":
     cors_origins = [
         "http://localhost:3000",
         "http://localhost:3010",
+        "http://localhost:3050",
         "http://127.0.0.1:3000",
         "http://127.0.0.1:3010",
+        "http://127.0.0.1:3050",
         "http://localhost:5173",
         "http://localhost:5174",
         "http://127.0.0.1:5173",
         "http://127.0.0.1:5174",
         "http://localhost:8000",
         "http://127.0.0.1:8000",
+        "https://inbound-agent.vercel.app",
         "https://inbound-agent-git-main-sravanthi9.vercel.app",
         *CORS_ALLOWED_ORIGINS,
     ]
@@ -203,7 +219,7 @@ else:
 app.add_middleware(
     CORSMiddleware,
     allow_origins=cors_origins,
-    allow_origin_regex=r"https?://(localhost|127\.0\.0\.1)(:\d+)?|https://.*\.vercel\.app",
+    allow_origin_regex=r"https?://(localhost|127\.0\.0\.1)(:\d+)?|https://.*\.vercel\.app|https://.*\.onrender\.com",
     allow_credentials=cors_allow_credentials,
     allow_methods=["*"],
     allow_headers=["*"],

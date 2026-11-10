@@ -26,11 +26,11 @@ class PublicBookingRequest(BaseModel):
     customer_name: str = Field(..., description="Customer full name")
     customer_phone: str = Field(..., description="Customer phone number")
     customer_email: Optional[str] = Field(None, description="Optional customer email")
-    appointment_date: str = Field(..., description="YYYY-MM-DD")
-    appointment_time: str = Field(..., description="HH:MM (e.g. 10:00)")
+    appointment_date: Optional[str] = Field(None, description="YYYY-MM-DD")
+    appointment_time: Optional[str] = Field(None, description="HH:MM (e.g. 10:00)")
     service_type: Optional[str] = Field("General Consultation", description="Selected service type")
     notes: Optional[str] = Field(None, description="Customer notes")
-    booking_source: Optional[str] = Field("website_embed", description="website_embed | direct_page | voice_call")
+    booking_source: Optional[str] = Field("voice_call", description="website_embed | direct_page | voice_call")
     workflow_run_id: Optional[int] = Field(None, description="Optional ID of originating call session")
 
 
@@ -68,11 +68,13 @@ class BookingConfigUpdateRequest(BaseModel):
 @router.get("/availability")
 async def check_availability(
     workflow_id: int = Query(..., description="Workflow ID"),
-    date: str = Query(..., description="Date in YYYY-MM-DD format"),
+    date: Optional[str] = Query(None, description="Date in YYYY-MM-DD format"),
 ):
     """Check open slots for an agent on a specific date (accessible by external websites)."""
     try:
-        slots_data = await db_client.get_available_slots(workflow_id=workflow_id, date_str=date)
+        from datetime import UTC, datetime
+        date_str = date or datetime.now(UTC).strftime("%Y-%m-%d")
+        slots_data = await db_client.get_available_slots(workflow_id=workflow_id, date_str=date_str)
         return slots_data
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -99,16 +101,19 @@ async def get_public_booking_config(workflow_id: int):
 async def book_appointment(req: PublicBookingRequest):
     """Book an appointment for an agent (from website widget, direct page, or voice AI)."""
     try:
+        from datetime import UTC, datetime
+        appt_date = req.appointment_date or datetime.now(UTC).strftime("%Y-%m-%d")
+        appt_time = req.appointment_time or "10:00"
         appointment = await db_client.book_appointment(
             workflow_id=req.workflow_id,
             customer_name=req.customer_name,
             customer_phone=req.customer_phone,
-            appointment_date=req.appointment_date,
-            appointment_time=req.appointment_time,
+            appointment_date=appt_date,
+            appointment_time=appt_time,
             customer_email=req.customer_email,
             service_type=req.service_type or "General Consultation",
             notes=req.notes,
-            booking_source=req.booking_source or "website_embed",
+            booking_source=req.booking_source or "voice_call",
             workflow_run_id=req.workflow_run_id,
         )
         return {
@@ -176,7 +181,11 @@ async def list_all_appointments(
     limit: int = Query(100),
 ):
     """List all appointments for the user's organization."""
-    org_id = user.current_organization_id if hasattr(user, "current_organization_id") and user.current_organization_id else 1
+    org_id = (
+        getattr(user, "selected_organization_id", None)
+        or getattr(user, "current_organization_id", None)
+        or 1
+    )
     items = await db_client.list_appointments(
         organization_id=org_id,
         status=status,

@@ -26,13 +26,10 @@ class PublicBookingRequest(BaseModel):
     customer_name: str = Field(..., description="Customer full name")
     customer_phone: str = Field(..., description="Customer phone number")
     customer_email: Optional[str] = Field(None, description="Optional customer email")
-    appointment_date: str = Field(..., description="YYYY-MM-DD")
-    appointment_time: str = Field(..., description="HH:MM (e.g. 10:00)")
     appointment_date: Optional[str] = Field(None, description="YYYY-MM-DD")
     appointment_time: Optional[str] = Field(None, description="HH:MM (e.g. 10:00)")
     service_type: Optional[str] = Field("General Consultation", description="Selected service type")
     notes: Optional[str] = Field(None, description="Customer notes")
-    booking_source: Optional[str] = Field("website_embed", description="website_embed | direct_page | voice_call")
     booking_source: Optional[str] = Field("voice_call", description="website_embed | direct_page | voice_call")
     workflow_run_id: Optional[int] = Field(None, description="Optional ID of originating call session")
 
@@ -184,7 +181,6 @@ async def list_all_appointments(
     limit: int = Query(100),
 ):
     """List all appointments for the user's organization."""
-    org_id = user.current_organization_id if hasattr(user, "current_organization_id") and user.current_organization_id else 1
     org_id = (
         getattr(user, "selected_organization_id", None)
         or getattr(user, "current_organization_id", None)

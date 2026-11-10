@@ -450,6 +450,13 @@ async def execute_http_tool(
             url=url,
             context=url_render_context,
         )
+        if url.startswith("/"):
+            import os
+            internal_url = os.environ.get("INTERNAL_API_URL")
+            if not internal_url:
+                port = os.environ.get("PORT", "8000")
+                internal_url = f"http://127.0.0.1:{port}"
+            url = f"{internal_url.rstrip('/')}{url}"
         _rendered_url = url
     except ValueError as e:
         logger.error(f"Custom tool '{tool.name}' URL template render failed: {e}")
