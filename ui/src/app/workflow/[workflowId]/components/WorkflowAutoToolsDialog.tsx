@@ -125,14 +125,14 @@ export function WorkflowAutoToolsDialog({
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
                     <span className="text-xs font-semibold text-white">
-                      Book Hospital Appointment
+                      Save Customer Lead &amp; Schedule Consultation
                     </span>
                     <Badge className="bg-emerald-500/20 text-emerald-400 border-none text-[10px] py-0 px-1.5">
                       POST
                     </Badge>
                   </div>
                   <p className="text-[11px] text-gray-400 mt-0.5">
-                    Collects patient name, mobile, age, gender, hospital branch, doctor/department, date and time.
+                    Records prospect name, mobile, email, project type, budget, timeline, and consultation slot directly into Appointments &amp; Leads.
                   </p>
                 </div>
               </div>
@@ -144,14 +144,14 @@ export function WorkflowAutoToolsDialog({
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
                     <span className="text-xs font-semibold text-white">
-                      Check Doctor &amp; Slot Availability
+                      Check Consultation Availability
                     </span>
                     <Badge className="bg-blue-500/20 text-blue-400 border-none text-[10px] py-0 px-1.5">
                       GET
                     </Badge>
                   </div>
                   <p className="text-[11px] text-gray-400 mt-0.5">
-                    Queries available appointment slots by branch, department, or date so the agent can inform callers.
+                    Queries open consultation and demo slots by date so the agent can offer available meeting times.
                   </p>
                 </div>
               </div>
@@ -163,14 +163,14 @@ export function WorkflowAutoToolsDialog({
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
                     <span className="text-xs font-semibold text-white">
-                      Cancel or Reschedule Appointment
+                      Cancel or Reschedule Consultation
                     </span>
                     <Badge className="bg-purple-500/20 text-purple-400 border-none text-[10px] py-0 px-1.5">
                       POST
                     </Badge>
                   </div>
                   <p className="text-[11px] text-gray-400 mt-0.5">
-                    Enables the caller to reschedule or cancel an existing appointment using their code or phone number.
+                    Enables the caller to reschedule or cancel an existing consultation using their confirmation code or phone number.
                   </p>
                 </div>
               </div>
