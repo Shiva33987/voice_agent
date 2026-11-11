@@ -1,20 +1,17 @@
 services:
   - type: web
-    name: inbound-agent-backend
+    name: voice-agent-backend
     runtime: docker
     dockerfilePath: Dockerfile
     dockerContext: .
     plan: starter
     envVars:
       - key: DATABASE_URL
-        fromDatabase:
-          name: inbound-agent-db
-          property: connectionString
+        value: postgresql://voice_agent_frvm_user:RnFCWpFqS5d2xUyiftEsM4okS1vsN8Ra@dpg-dbpconrm8hqs73di2jo0-a.virginia-postgres.render.com/voice_agent_frvm
+      - key: BACKEND_API_ENDPOINT
+        value: https://voice-agent-twrx.onrender.com
       - key: REDIS_URL
-        fromService:
-          type: redis
-          name: inbound-agent-redis
-          property: connectionString
+        value: redis://localhost:6379/0
       - key: DEPLOYMENT_MODE
         value: oss
       - key: CORS_ALLOWED_ORIGINS
@@ -22,14 +19,4 @@ services:
       - key: OSS_JWT_SECRET
         generateValue: true
 
-databases:
-  - name: inbound-agent-db
-    plan: starter
-    databaseName: dograh
-    user: postgres
-
-redis:
-  - name: inbound-agent-redis
-    plan: starter
-    ipAllowList: []
 

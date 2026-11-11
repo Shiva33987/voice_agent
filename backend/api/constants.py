@@ -88,6 +88,9 @@ _raw_db_url = (
     or os.getenv("DB_URL")
     or "postgresql://voice_agent_frvm_user:RnFCWpFqS5d2xUyiftEsM4okS1vsN8Ra@dpg-dbpconrm8hqs73di2jo0-a.virginia-postgres.render.com/voice_agent_frvm"
 )
+if "inbound-agent-db" in _raw_db_url or "localhost:5433" in _raw_db_url:
+    _raw_db_url = "postgresql://voice_agent_frvm_user:RnFCWpFqS5d2xUyiftEsM4okS1vsN8Ra@dpg-dbpconrm8hqs73di2jo0-a.virginia-postgres.render.com/voice_agent_frvm"
+
 if _raw_db_url.startswith("postgres://"):
     _raw_db_url = _raw_db_url.replace("postgres://", "postgresql+asyncpg://", 1)
 elif _raw_db_url.startswith("postgresql://") and not _raw_db_url.startswith("postgresql+asyncpg://"):
@@ -96,7 +99,10 @@ if "sslmode=require" in _raw_db_url:
     _raw_db_url = _raw_db_url.replace("sslmode=require", "ssl=require")
 DATABASE_URL = _raw_db_url
 
-REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379/0")
+_raw_redis_url = os.getenv("REDIS_URL", "redis://localhost:6379/0")
+if "inbound-agent-redis" in _raw_redis_url:
+    _raw_redis_url = "redis://localhost:6379/0"
+REDIS_URL = _raw_redis_url
 
 DEPLOYMENT_MODE = os.getenv("DEPLOYMENT_MODE", "oss")
 CORS_ALLOWED_ORIGINS = [
