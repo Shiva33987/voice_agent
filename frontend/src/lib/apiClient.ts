@@ -5,7 +5,7 @@ export function getServerBackendUrl() {
     return (
         process.env.BACKEND_URL ||
         process.env.NEXT_PUBLIC_BACKEND_URL ||
-        'https://inbound-agent-46v0.onrender.com'
+        'https://voice-agent-twrx.onrender.com'
     );
 }
 
@@ -31,7 +31,7 @@ export function resolveBrowserBackendUrl(backendApiEndpoint?: string | null): st
         process.env.NEXT_PUBLIC_BACKEND_URL ||
         backendApiEndpoint ||
         (typeof window !== 'undefined' ? window.location.origin : '') ||
-        'https://inbound-agent-46v0.onrender.com'
+        'https://voice-agent-twrx.onrender.com'
     );
 }
 
