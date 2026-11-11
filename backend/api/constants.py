@@ -61,8 +61,12 @@ SERVER_IP = os.getenv("SERVER_IP", "")
 # When this is a non-public address (localhost or a private/reserved IP) the host
 # isn't reachable from the internet, so get_backend_endpoints() resolves a running
 # Cloudflare tunnel's URL at runtime instead (see api/utils/common.py).
+_raw_backend_endpoint = os.getenv("BACKEND_API_ENDPOINT")
+if _raw_backend_endpoint and "trycloudflare.com" in _raw_backend_endpoint:
+    _raw_backend_endpoint = None
+
 BACKEND_API_ENDPOINT = (
-    os.getenv("BACKEND_API_ENDPOINT")
+    _raw_backend_endpoint
     or PUBLIC_BASE_URL
     or (
         f"https://{os.getenv('RENDER_EXTERNAL_HOSTNAME')}"

@@ -27,10 +27,16 @@ export function getServerBackendUrl() {
  * resolveWebhookBaseUrl.
  */
 export function resolveBrowserBackendUrl(backendApiEndpoint?: string | null): string {
+    const validBackendEndpoint =
+        backendApiEndpoint &&
+        !backendApiEndpoint.includes('trycloudflare.com') &&
+        !backendApiEndpoint.includes('localhost')
+            ? backendApiEndpoint
+            : null;
+
     return (
         process.env.NEXT_PUBLIC_BACKEND_URL ||
-        backendApiEndpoint ||
-        (typeof window !== 'undefined' ? window.location.origin : '') ||
+        validBackendEndpoint ||
         'https://voice-agent-twrx.onrender.com'
     );
 }

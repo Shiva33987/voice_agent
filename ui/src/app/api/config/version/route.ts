@@ -58,7 +58,8 @@ export async function GET() {
       tunnelUrl = data.tunnel_url ?? null;
       backendApiEndpoint =
         typeof data.backend_api_endpoint === "string" &&
-        data.backend_api_endpoint.length > 0
+        data.backend_api_endpoint.length > 0 &&
+        !data.backend_api_endpoint.includes("trycloudflare.com")
           ? trimTrailingSlash(data.backend_api_endpoint)
           : null;
       backendStatus = "reachable";
