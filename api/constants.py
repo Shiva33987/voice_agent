@@ -86,7 +86,7 @@ _raw_db_url = (
     or os.getenv("POSTGRES_URL")
     or os.getenv("POSTGRESQL_URL")
     or os.getenv("DB_URL")
-    or "postgresql+asyncpg://postgres:postgres@localhost:5433/dograh"
+    or "postgresql://voice_agent_frvm_user:RnFCWpFqS5d2xUyiftEsM4okS1vsN8Ra@dpg-dbpconrm8hqs73di2jo0-a.virginia-postgres.render.com/voice_agent_frvm"
 )
 if _raw_db_url.startswith("postgres://"):
     _raw_db_url = _raw_db_url.replace("postgres://", "postgresql+asyncpg://", 1)
