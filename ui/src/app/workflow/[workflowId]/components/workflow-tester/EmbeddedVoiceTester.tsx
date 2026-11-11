@@ -17,6 +17,7 @@ interface EmbeddedVoiceTesterProps {
     initialContextVariables?: Record<string, string>;
     accessToken: string;
     onReset: () => void;
+    onStartAnotherTest?: () => void;
     onNodeTransition?: (transition: WorkflowRuntimeNodeTransition) => void;
 }
 
@@ -26,6 +27,7 @@ export function EmbeddedVoiceTester({
     initialContextVariables,
     accessToken,
     onReset,
+    onStartAnotherTest,
     onNodeTransition,
 }: EmbeddedVoiceTesterProps) {
     const router = useRouter();
@@ -128,7 +130,11 @@ export function EmbeddedVoiceTester({
             return;
         }
         if (isCompleted) {
-            onReset();
+            if (onStartAnotherTest) {
+                onStartAnotherTest();
+            } else {
+                onReset();
+            }
             return;
         }
         if (connectionStatus === "failed") {

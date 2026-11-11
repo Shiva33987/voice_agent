@@ -16,6 +16,7 @@ References:
 import base64
 import hashlib
 import hmac
+import os
 import time
 from typing import List, Optional
 
@@ -153,7 +154,26 @@ async def get_turn_credentials(
         )
 
     if not TURN_SECRET:
-        logger.warning("TURN credentials requested but TURN_SECRET not configured")
+        turn_username = os.getenv("TURN_USERNAME")
+        turn_password = os.getenv("TURN_PASSWORD")
+        if turn_username and turn_password and TURN_HOST:
+            uris = [
+                f"turn:{TURN_HOST}:{TURN_PORT}",
+                f"turn:{TURN_HOST}:{TURN_PORT}?transport=tcp",
+            ]
+            if TURN_TLS_PORT:
+                uris.extend([
+                    f"turns:{TURN_HOST}:{TURN_TLS_PORT}",
+                    f"turns:{TURN_HOST}:{TURN_TLS_PORT}?transport=tcp",
+                ])
+            logger.debug(f"Returning static TURN credentials for user {user.id}")
+            return TurnCredentialsResponse(
+                username=turn_username,
+                password=turn_password,
+                ttl=86400,
+                uris=uris,
+            )
+        logger.warning("TURN credentials requested but neither TURN_SECRET nor TURN_USERNAME/PASSWORD configured")
         raise HTTPException(
             status_code=503,
             detail="TURN server not configured",

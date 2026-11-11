@@ -205,6 +205,7 @@ export function WorkflowTesterPanel({
                                 initialContextVariables={initialContextVariables}
                                 accessToken={accessToken}
                                 onReset={() => setVoiceRunId(null)}
+                                onStartAnotherTest={createVoiceRun}
                                 onNodeTransition={onRuntimeNodeTransition}
                             />
                         ) : (

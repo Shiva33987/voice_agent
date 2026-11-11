@@ -302,9 +302,23 @@ export const useWebSocketRTC = ({ workflowId, workflowRunId, accessToken, initia
             if (evt.track.kind === 'audio' && audioRef.current) {
                 const stream = (evt.streams && evt.streams[0]) ? evt.streams[0] : new MediaStream([evt.track]);
                 audioRef.current.srcObject = stream;
-                audioRef.current.play().catch((err) => {
-                    logger.warn('[WebRTC] Autoplay was prevented by browser policy:', err);
-                });
+                const playPromise = audioRef.current.play();
+                if (playPromise !== undefined) {
+                    playPromise.catch((err) => {
+                        logger.warn('[WebRTC] Autoplay was prevented by browser policy:', err);
+                        const resumeAudio = () => {
+                            if (audioRef.current) {
+                                audioRef.current.play().catch(() => {});
+                            }
+                            window.removeEventListener('click', resumeAudio);
+                            window.removeEventListener('keydown', resumeAudio);
+                            window.removeEventListener('touchstart', resumeAudio);
+                        };
+                        window.addEventListener('click', resumeAudio);
+                        window.addEventListener('keydown', resumeAudio);
+                        window.addEventListener('touchstart', resumeAudio);
+                    });
+                }
             }
         });
 
