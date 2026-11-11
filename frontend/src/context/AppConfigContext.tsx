@@ -81,7 +81,7 @@ export function AppConfigProvider({ children }: { children: ReactNode }) {
             // different host/port. resolveBrowserBackendUrl keeps NEXT_PUBLIC_BACKEND_URL
             // ahead of the reported endpoint. Guard on a present endpoint so a
             // transient /health failure never downgrades a good base URL to origin.
-            if (backendApiEndpoint) {
+            if (backendApiEndpoint && !backendApiEndpoint.includes('trycloudflare.com')) {
                 client.setConfig({ baseUrl: resolveBrowserBackendUrl(backendApiEndpoint) });
             }
 

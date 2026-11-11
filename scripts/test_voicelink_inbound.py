@@ -11,7 +11,7 @@ import json
 import time
 import websockets
 
-WS_URL = "wss://oasis-craft-reunion-default.trycloudflare.com/api/v1/telephony/ws"
+WS_URL = "wss://voice-agent-twrx.onrender.com/api/v1/telephony/ws"
 DID = "+919429398780"
 CALLER = "+919949020175"
 

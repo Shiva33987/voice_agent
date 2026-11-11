@@ -68,7 +68,7 @@ BACKEND_API_ENDPOINT = (
         f"https://{os.getenv('RENDER_EXTERNAL_HOSTNAME')}"
         if os.getenv("RENDER_EXTERNAL_HOSTNAME")
         else (
-            "https://inbound-agent-46v0.onrender.com"
+            "https://voice-agent-twrx.onrender.com"
             if os.getenv("PORT") == "10000"
             else "http://localhost:8000"
         )
