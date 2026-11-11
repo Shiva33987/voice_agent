@@ -56,6 +56,19 @@ class TurnConfigResponse(BaseModel):
     host: Optional[str] = None
 
 
+def clean_turn_host(host: Optional[str]) -> str:
+    """Sanitize TURN host by stripping protocols, ports, and trailing paths."""
+    if not host:
+        return ""
+    host = host.strip()
+    if "://" in host:
+        host = host.split("://", 1)[1]
+    host = host.split("/")[0]
+    if ":" in host:
+        host = host.split(":")[0]
+    return host
+
+
 def generate_turn_credentials(user_id: str, ttl: int = TURN_CREDENTIAL_TTL) -> dict:
     """Generate time-limited TURN credentials using HMAC-SHA1.
 
@@ -98,20 +111,21 @@ def generate_turn_credentials(user_id: str, ttl: int = TURN_CREDENTIAL_TTL) -> d
     #   2. TURN TCP for LOCAL env (macOS Docker compatibility)
     #   3. TURN UDP for production (more efficient)
     uris = []
+    host = clean_turn_host(TURN_HOST)
 
     # Add non-TLS TURN as fallback, ordered by environment
     if ENVIRONMENT == Environment.LOCAL.value:
         uris.extend(
             [
-                f"turn:{TURN_HOST}:{TURN_PORT}?transport=tcp",  # TCP for macOS Docker
-                f"turn:{TURN_HOST}:{TURN_PORT}",  # UDP fallback
+                f"turn:{host}:{TURN_PORT}?transport=tcp",  # TCP for macOS Docker
+                f"turn:{host}:{TURN_PORT}",  # UDP fallback
             ]
         )
     else:
         uris.extend(
             [
-                f"turn:{TURN_HOST}:{TURN_PORT}",  # UDP preferred for other environments
-                f"turn:{TURN_HOST}:{TURN_PORT}?transport=tcp",  # TCP fallback
+                f"turn:{host}:{TURN_PORT}",  # UDP preferred for other environments
+                f"turn:{host}:{TURN_PORT}?transport=tcp",  # TCP fallback
             ]
         )
 
@@ -119,8 +133,8 @@ def generate_turn_credentials(user_id: str, ttl: int = TURN_CREDENTIAL_TTL) -> d
     if TURN_TLS_PORT:
         uris.extend(
             [
-                f"turns:{TURN_HOST}:{TURN_TLS_PORT}",  # TURN over TLS
-                f"turns:{TURN_HOST}:{TURN_TLS_PORT}?transport=tcp",  # TURN over TLS+TCP
+                f"turns:{host}:{TURN_TLS_PORT}",  # TURN over TLS
+                f"turns:{host}:{TURN_TLS_PORT}?transport=tcp",  # TURN over TLS+TCP
             ]
         )
 
@@ -156,15 +170,16 @@ async def get_turn_credentials(
     if not TURN_SECRET:
         turn_username = os.getenv("TURN_USERNAME")
         turn_password = os.getenv("TURN_PASSWORD")
-        if turn_username and turn_password and TURN_HOST:
+        host = clean_turn_host(TURN_HOST)
+        if turn_username and turn_password and host:
             uris = [
-                f"turn:{TURN_HOST}:{TURN_PORT}",
-                f"turn:{TURN_HOST}:{TURN_PORT}?transport=tcp",
+                f"turn:{host}:{TURN_PORT}",
+                f"turn:{host}:{TURN_PORT}?transport=tcp",
             ]
             if TURN_TLS_PORT:
                 uris.extend([
-                    f"turns:{TURN_HOST}:{TURN_TLS_PORT}",
-                    f"turns:{TURN_HOST}:{TURN_TLS_PORT}?transport=tcp",
+                    f"turns:{host}:{TURN_TLS_PORT}",
+                    f"turns:{host}:{TURN_TLS_PORT}?transport=tcp",
                 ])
             logger.debug(f"Returning static TURN credentials for user {user.id}")
             return TurnCredentialsResponse(

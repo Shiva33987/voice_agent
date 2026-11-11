@@ -43,6 +43,7 @@ from api.routes.turn_credentials import (
     TURN_HOST,
     TURN_PORT,
     TURN_SECRET,
+    clean_turn_host,
     generate_turn_credentials,
 )
 from api.services.auth.depends import get_user_ws
@@ -287,11 +288,12 @@ def get_ice_servers(user_id: Optional[str] = None) -> List[RTCIceServer]:
     turn_password = os.getenv("TURN_PASSWORD")
 
     if turn_username and turn_password:
+        host = clean_turn_host(TURN_HOST)
         servers.append(
             RTCIceServer(
                 urls=[
-                    f"turn:{TURN_HOST}:{TURN_PORT}",
-                    f"turn:{TURN_HOST}:{TURN_PORT}?transport=tcp",
+                    f"turn:{host}:{TURN_PORT}",
+                    f"turn:{host}:{TURN_PORT}?transport=tcp",
                 ],
                 username=turn_username,
                 credential=turn_password,

@@ -53,19 +53,17 @@ class MinioFileSystem(BaseFileSystem):
         self.client = Minio(
             endpoint, access_key=access_key, secret_key=secret_key, secure=secure
         )
+        self._bucket_initialized = False
 
-        # Ensure bucket exists and configure anonymous access (using internal client)
+    def _ensure_bucket(self):
+        """Lazily ensure bucket exists and configure anonymous access if needed."""
+        if self._bucket_initialized:
+            return
+        self._bucket_initialized = True
         try:
             if not self.client.bucket_exists(self.bucket_name):
                 self.client.make_bucket(self.bucket_name)
 
-            # Set public read/write policy for local development
-            # This allows:
-            # 1. Anonymous downloads (s3:GetObject)
-            # 2. Anonymous uploads (s3:PutObject) - bypasses presigned URL signature issues
-            # 3. List bucket contents (s3:ListBucket) for debugging
-            # Note: This is set on every initialization to ensure policy is correct
-            # WARNING: Only use in local development, not production!
             policy = {
                 "Version": "2012-10-17",
                 "Statement": [
@@ -86,15 +84,14 @@ class MinioFileSystem(BaseFileSystem):
 
             self.client.set_bucket_policy(self.bucket_name, json.dumps(policy))
         except Exception as e:
-            # Bucket might already exist or we might be in a restricted environment
             logger.debug(f"Bucket setup note: {e}")
-            pass
 
     async def acreate_file(self, file_path: str, content: AsyncReadable) -> bool:
         try:
             data = await content.read()
 
             def _put():
+                self._ensure_bucket()
                 # The MinIO SDK requires a stream with .read(), not raw bytes.
                 self.client.put_object(
                     self.bucket_name,
@@ -112,6 +109,7 @@ class MinioFileSystem(BaseFileSystem):
         try:
 
             def _fput():
+                self._ensure_bucket()
                 self.client.fput_object(self.bucket_name, destination_path, local_path)
 
             await asyncio.to_thread(_fput)
