@@ -88,7 +88,12 @@ _raw_db_url = (
     or os.getenv("DB_URL")
     or "postgresql://voice_agent_frvm_user:RnFCWpFqS5d2xUyiftEsM4okS1vsN8Ra@dpg-dbpconrm8hqs73di2jo0-a.virginia-postgres.render.com/voice_agent_frvm"
 )
-if "inbound-agent-db" in _raw_db_url or "localhost:5433" in _raw_db_url:
+_raw_db_url = "".join(_raw_db_url.split())
+if (
+    "inbound-agent-db" in _raw_db_url
+    or "localhost:5433" in _raw_db_url
+    or ("virginia" in _raw_db_url and "voice_agent_frvm" in _raw_db_url)
+):
     _raw_db_url = "postgresql://voice_agent_frvm_user:RnFCWpFqS5d2xUyiftEsM4okS1vsN8Ra@dpg-dbpconrm8hqs73di2jo0-a.virginia-postgres.render.com/voice_agent_frvm"
 
 if _raw_db_url.startswith("postgres://"):
