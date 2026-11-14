@@ -21,9 +21,9 @@ export async function GET() {
   const token = cookieStore.get(OSS_TOKEN_COOKIE)?.value;
   const user = cookieStore.get(OSS_USER_COOKIE)?.value;
 
-  // If no token exists, return 401 (user needs to sign up or log in)
+  // If no token exists, return 200 with null token to avoid noisy 401 console errors on login page
   if (!token) {
-    return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
+    return NextResponse.json({ token: null, user: null, authenticated: false });
   }
 
   // Return the auth info as JSON
