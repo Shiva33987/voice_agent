@@ -946,13 +946,11 @@
     } else {
       iceServers.push({
         urls: [
-          'turn:openrelay.metered.ca:443?transport=tcp',
-          'turn:openrelay.metered.ca:80?transport=tcp',
-          'turn:openrelay.metered.ca:443',
-          'turn:openrelay.metered.ca:80'
+          'turn:turn.quickblox.com:3478?transport=tcp',
+          'turn:turn.quickblox.com:3478'
         ],
-        username: 'openrelayproject',
-        credential: 'openrelayproject'
+        username: 'quickblox',
+        credential: 'baccb97ba2d92d71e26eb9886da5f1e0'
       });
       console.log('Dograh Widget: Fallback TURN server configured over TCP');
     }

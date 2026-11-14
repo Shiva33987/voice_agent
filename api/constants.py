@@ -305,12 +305,12 @@ DEFAULT_CIRCUIT_BREAKER_CONFIG = {
 ENABLE_COTURN = os.getenv("ENABLE_COTURN", "true").lower() == "true"
 TURN_SECRET = os.getenv("TURN_SECRET")
 # Host browsers dial for TURN/ICE.
-TURN_HOST = os.getenv("TURN_HOST") or "relay.metered.ca"
-TURN_PORT = int(os.getenv("TURN_PORT", "80"))
+TURN_HOST = os.getenv("TURN_HOST") or "turn.quickblox.com"
+TURN_PORT = int(os.getenv("TURN_PORT", "3478"))
 TURN_TLS_PORT = int(os.getenv("TURN_TLS_PORT", "5349"))
 TURN_CREDENTIAL_TTL = int(os.getenv("TURN_CREDENTIAL_TTL", "86400"))
-TURN_USERNAME = os.getenv("TURN_USERNAME", "openrelayproject")
-TURN_PASSWORD = os.getenv("TURN_PASSWORD", "openrelayproject")
+TURN_USERNAME = os.getenv("TURN_USERNAME", "quickblox")
+TURN_PASSWORD = os.getenv("TURN_PASSWORD", "baccb97ba2d92d71e26eb9886da5f1e0")
 # Diagnostic flag: when true, strip all non-relay ICE candidates from the
 # answer SDP so every media path must traverse the TURN server. Use for
 # verifying TURN connectivity end-to-end; expect connection failures if

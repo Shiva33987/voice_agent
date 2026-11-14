@@ -589,16 +589,14 @@ async def get_public_turn_credentials(
         except Exception as e:
             logger.error(f"Failed to generate TURN credentials for embed session: {e}")
 
-    # Fallback to reliable public TURN over TCP (OpenRelay / Metered)
+    # Fallback to reliable public TURN over TCP/UDP (QuickBlox)
     uris = [
-        "turn:openrelay.metered.ca:443?transport=tcp",
-        "turn:openrelay.metered.ca:80?transport=tcp",
-        "turn:openrelay.metered.ca:443",
-        "turn:openrelay.metered.ca:80",
+        "turn:turn.quickblox.com:3478?transport=tcp",
+        "turn:turn.quickblox.com:3478",
     ]
     return TurnCredentialsResponse(
-        username="openrelayproject",
-        password="openrelayproject",
+        username="quickblox",
+        password="baccb97ba2d92d71e26eb9886da5f1e0",
         ttl=86400,
         uris=uris,
     )

@@ -21,14 +21,12 @@ services:
       - key: ENABLE_COTURN
         value: "true"
       - key: TURN_HOST
-        value: "openrelay.metered.ca"
+        value: "turn.quickblox.com"
       - key: TURN_PORT
-        value: "443"
+        value: "3478"
       - key: TURN_USERNAME
-        value: "openrelayproject"
+        value: "quickblox"
       - key: TURN_PASSWORD
-        value: "openrelayproject"
+        value: "baccb97ba2d92d71e26eb9886da5f1e0"
       - key: STALE_CALL_TIMEOUT
         value: "180"
-
-

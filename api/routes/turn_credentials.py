@@ -171,16 +171,14 @@ async def get_turn_credentials(
         except Exception as e:
             logger.error(f"Failed to generate TURN credentials: {e}")
 
-    # Fallback to reliable public TURN over TCP (OpenRelay / Metered) for cloud environments
-    turn_username = os.getenv("TURN_USERNAME") or "openrelayproject"
-    turn_password = os.getenv("TURN_PASSWORD") or "openrelayproject"
+    # Fallback to reliable public TURN over TCP (QuickBlox) for cloud environments
+    turn_username = os.getenv("TURN_USERNAME") or "quickblox"
+    turn_password = os.getenv("TURN_PASSWORD") or "baccb97ba2d92d71e26eb9886da5f1e0"
     host = clean_turn_host(TURN_HOST)
-    if host in ("relay.metered.ca", "openrelay.metered.ca"):
+    if host in ("relay.metered.ca", "openrelay.metered.ca", "turn.quickblox.com"):
         uris = [
-            "turn:openrelay.metered.ca:443?transport=tcp",
-            "turn:openrelay.metered.ca:80?transport=tcp",
-            "turn:openrelay.metered.ca:443",
-            "turn:openrelay.metered.ca:80",
+            "turn:turn.quickblox.com:3478?transport=tcp",
+            "turn:turn.quickblox.com:3478",
         ]
     else:
         port = TURN_PORT or 3478

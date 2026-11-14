@@ -266,21 +266,19 @@ def get_ice_servers(user_id: Optional[str] = None) -> List[RTCIceServer]:
         except Exception as e:
             logger.error(f"Failed to generate TURN credentials: {e}")
 
-    # Fallback to reliable public TURN over TCP (OpenRelay / Metered) for cloud environments (Render, etc.)
-    # Note: TCP over port 443/80 is required for Render Web Services which drop inbound UDP.
+    # Fallback to reliable public TURN over TCP/UDP (QuickBlox) for cloud environments (Render, etc.)
+    # Note: TCP over port 3478 is required for Render Web Services which drop inbound UDP.
     servers.append(
         RTCIceServer(
             urls=[
-                "turn:openrelay.metered.ca:443?transport=tcp",
-                "turn:openrelay.metered.ca:80?transport=tcp",
-                "turn:openrelay.metered.ca:443",
-                "turn:openrelay.metered.ca:80",
+                "turn:turn.quickblox.com:3478?transport=tcp",
+                "turn:turn.quickblox.com:3478",
             ],
-            username="openrelayproject",
-            credential="openrelayproject",
+            username="quickblox",
+            credential="baccb97ba2d92d71e26eb9886da5f1e0",
         )
     )
-    logger.info("Configured fallback TURN relay servers over TCP (openrelay.metered.ca:443)")
+    logger.info("Configured fallback TURN relay servers over TCP (turn.quickblox.com:3478)")
     return servers
 
 

@@ -229,15 +229,13 @@ export const useWebSocketRTC = ({ workflowId, workflowRunId, accessToken, initia
             // Provide reliable TURN relay fallback over TCP (essential for cloud deployments / symmetric NAT like Render)
             iceServers.push({
                 urls: [
-                    'turn:openrelay.metered.ca:443?transport=tcp',
-                    'turn:openrelay.metered.ca:80?transport=tcp',
-                    'turn:openrelay.metered.ca:443',
-                    'turn:openrelay.metered.ca:80'
+                    'turn:turn.quickblox.com:3478?transport=tcp',
+                    'turn:turn.quickblox.com:3478'
                 ],
-                username: 'openrelayproject',
-                credential: 'openrelayproject'
+                username: 'quickblox',
+                credential: 'baccb97ba2d92d71e26eb9886da5f1e0'
             });
-            logger.info('Fallback TURN server configured over TCP (openrelay.metered.ca:443)');
+            logger.info('Fallback TURN server configured over TCP (turn.quickblox.com:3478)');
         }
 
         const config: RTCConfiguration = {
