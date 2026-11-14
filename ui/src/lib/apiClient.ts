@@ -2,11 +2,14 @@ import type { Client } from '@/client/client';
 import type { CreateClientConfig } from '@/client/client.gen';
 
 export function getServerBackendUrl() {
-    return (
-        process.env.BACKEND_URL ||
-        process.env.NEXT_PUBLIC_BACKEND_URL ||
-        'https://voice-agent-twrx.onrender.com'
-    );
+    const isDev = process.env.NODE_ENV === 'development';
+    const envUrl = process.env.BACKEND_URL || process.env.NEXT_PUBLIC_BACKEND_URL;
+    if (envUrl && !envUrl.includes('inbound-agent-46v0')) {
+        if (!envUrl.includes('localhost') || isDev) {
+            return envUrl;
+        }
+    }
+    return 'https://voice-agent-twrx.onrender.com';
 }
 
 /**
@@ -27,15 +30,23 @@ export function getServerBackendUrl() {
  * resolveWebhookBaseUrl.
  */
 export function resolveBrowserBackendUrl(backendApiEndpoint?: string | null): string {
+    const isDev = process.env.NODE_ENV === 'development';
     const validBackendEndpoint =
         backendApiEndpoint &&
         !backendApiEndpoint.includes('trycloudflare.com') &&
-        !backendApiEndpoint.includes('localhost')
+        (!backendApiEndpoint.includes('localhost') || isDev) &&
+        !backendApiEndpoint.includes('inbound-agent-46v0')
             ? backendApiEndpoint
             : null;
 
+    const envBackend = process.env.NEXT_PUBLIC_BACKEND_URL;
+    if (envBackend && !envBackend.includes('inbound-agent-46v0')) {
+        if (!envBackend.includes('localhost') || isDev) {
+            return envBackend;
+        }
+    }
+
     return (
-        process.env.NEXT_PUBLIC_BACKEND_URL ||
         validBackendEndpoint ||
         'https://voice-agent-twrx.onrender.com'
     );
