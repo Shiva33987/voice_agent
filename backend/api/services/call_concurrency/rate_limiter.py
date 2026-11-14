@@ -29,7 +29,7 @@ class RateLimiter:
 
     def __init__(self):
         self.redis_client: Optional[aioredis.Redis] = None
-        self.stale_call_timeout = 1200  # 20 minutes in seconds
+        self.stale_call_timeout = int(os.getenv("STALE_CALL_TIMEOUT", "180"))  # 3 minutes default
         self._redis_down_until: float = 0.0
         self._memory_slots: dict[str, dict[str, float]] = {}
         self._memory_workflow_mappings: dict[int, dict] = {}

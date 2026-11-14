@@ -162,42 +162,42 @@ async def get_turn_credentials(
     Returns:
         TurnCredentialsResponse with username, password, ttl, and TURN URIs
     """
-    if not ENABLE_COTURN:
-        logger.warning("TURN credentials requested but ENABLE_COTURN is false")
-        raise HTTPException(
-            status_code=503,
-            detail="TURN server not configured",
-        )
+    # Use time-limited credentials if custom Coturn is configured
+    if ENABLE_COTURN and TURN_SECRET and "change-in-production" not in str(TURN_SECRET) and "vercel.app" not in str(TURN_HOST):
+        try:
+            credentials = generate_turn_credentials(str(user.id))
+            logger.debug(f"Generated TURN credentials for user {user.id}")
+            return TurnCredentialsResponse(**credentials)
+        except Exception as e:
+            logger.error(f"Failed to generate TURN credentials: {e}")
 
-    if not TURN_SECRET or "change-in-production" in str(TURN_SECRET) or "vercel.app" in str(TURN_HOST):
-        turn_username = os.getenv("TURN_USERNAME") or "openrelayproject"
-        turn_password = os.getenv("TURN_PASSWORD") or "openrelayproject"
-        host = clean_turn_host(TURN_HOST)
-        port = 80 if host == "relay.metered.ca" else TURN_PORT
+    # Fallback to reliable public TURN over TCP (OpenRelay / Metered) for cloud environments
+    turn_username = os.getenv("TURN_USERNAME") or "openrelayproject"
+    turn_password = os.getenv("TURN_PASSWORD") or "openrelayproject"
+    host = clean_turn_host(TURN_HOST)
+    if host in ("relay.metered.ca", "openrelay.metered.ca"):
+        uris = [
+            "turn:openrelay.metered.ca:443?transport=tcp",
+            "turn:openrelay.metered.ca:80?transport=tcp",
+            "turn:openrelay.metered.ca:443",
+            "turn:openrelay.metered.ca:80",
+        ]
+    else:
+        port = TURN_PORT or 3478
         uris = [
             f"turn:{host}:{port}?transport=tcp",
             f"turn:{host}:{port}",
         ]
-        if TURN_TLS_PORT and host != "relay.metered.ca":
+        if TURN_TLS_PORT:
             uris.extend([
                 f"turns:{host}:{TURN_TLS_PORT}",
                 f"turns:{host}:{TURN_TLS_PORT}?transport=tcp",
             ])
-        logger.debug(f"Returning static TURN credentials for user {user.id}")
-        return TurnCredentialsResponse(
-            username=turn_username,
-            password=turn_password,
-            ttl=86400,
-            uris=uris,
-        )
 
-    try:
-        credentials = generate_turn_credentials(str(user.id))
-        logger.debug(f"Generated TURN credentials for user {user.id}")
-        return TurnCredentialsResponse(**credentials)
-    except Exception as e:
-        logger.error(f"Failed to generate TURN credentials: {e}")
-        raise HTTPException(
-            status_code=500,
-            detail="Failed to generate TURN credentials",
-        )
+    logger.debug(f"Returning TURN credentials for user {user.id}")
+    return TurnCredentialsResponse(
+        username=turn_username,
+        password=turn_password,
+        ttl=86400,
+        uris=uris,
+    )

@@ -943,6 +943,18 @@
         credential: state.turnCredentials.password
       });
       console.log(`TURN server configured with ${state.turnCredentials.uris.length} URIs`);
+    } else {
+      iceServers.push({
+        urls: [
+          'turn:openrelay.metered.ca:443?transport=tcp',
+          'turn:openrelay.metered.ca:80?transport=tcp',
+          'turn:openrelay.metered.ca:443',
+          'turn:openrelay.metered.ca:80'
+        ],
+        username: 'openrelayproject',
+        credential: 'openrelayproject'
+      });
+      console.log('Dograh Widget: Fallback TURN server configured over TCP');
     }
 
     // Reachable: turn_enabled and force_turn_relay are independent, so

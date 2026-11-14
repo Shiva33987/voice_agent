@@ -225,6 +225,19 @@ export const useWebSocketRTC = ({ workflowId, workflowRunId, accessToken, initia
             });
 
             logger.info(`TURN server configured with ${turnCredentials.uris.length} URIs, TTL: ${turnCredentials.ttl}s`);
+        } else {
+            // Provide reliable TURN relay fallback over TCP (essential for cloud deployments / symmetric NAT like Render)
+            iceServers.push({
+                urls: [
+                    'turn:openrelay.metered.ca:443?transport=tcp',
+                    'turn:openrelay.metered.ca:80?transport=tcp',
+                    'turn:openrelay.metered.ca:443',
+                    'turn:openrelay.metered.ca:80'
+                ],
+                username: 'openrelayproject',
+                credential: 'openrelayproject'
+            });
+            logger.info('Fallback TURN server configured over TCP (openrelay.metered.ca:443)');
         }
 
         const config: RTCConfiguration = {
@@ -710,30 +723,19 @@ export const useWebSocketRTC = ({ workflowId, workflowRunId, accessToken, initia
         setConnectionStatus('connecting');
 
         try {
-            // Fetch time-limited TURN credentials from backend API only if the
-            // server reports a TURN server is configured. Skipping the request
-            // avoids a 503 on OSS local deployments that don't run coturn.
-            if (appConfig?.turnEnabled === false) {
-                logger.info('TURN server disabled in app config, using STUN only');
-            } else {
-                try {
-                    const turnResponse = await getTurnCredentialsApiV1TurnCredentialsGet({
-                        headers: {
-                            'Authorization': `Bearer ${accessToken}`,
-                        },
-                    });
-                    if (turnResponse.data) {
-                        turnCredentialsRef.current = turnResponse.data;
-                        logger.info(`TURN credentials obtained, TTL: ${turnResponse.data.ttl}s`);
-                    } else if (turnResponse.response?.status === 503) {
-                        // TURN not configured on server - this is OK, we'll use STUN only
-                        logger.info('TURN server not configured, using STUN only');
-                    } else {
-                        logger.warn(`Failed to fetch TURN credentials: ${turnResponse.response?.status}`);
-                    }
-                } catch (e) {
-                    logger.warn('Failed to fetch TURN credentials, continuing without TURN:', e);
+            // Fetch TURN credentials from backend API
+            try {
+                const turnResponse = await getTurnCredentialsApiV1TurnCredentialsGet({
+                    headers: {
+                        'Authorization': `Bearer ${accessToken}`,
+                    },
+                });
+                if (turnResponse.data?.uris && turnResponse.data.uris.length > 0) {
+                    turnCredentialsRef.current = turnResponse.data;
+                    logger.info(`TURN credentials obtained, TTL: ${turnResponse.data.ttl}s`);
                 }
+            } catch (e) {
+                logger.warn('Failed to fetch TURN credentials from backend, fallback relay will be used:', e);
             }
 
             // Validate API keys

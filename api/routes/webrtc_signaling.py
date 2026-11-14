@@ -248,25 +248,8 @@ def get_ice_servers(user_id: Optional[str] = None) -> List[RTCIceServer]:
         [] if FORCE_TURN_RELAY else [RTCIceServer(urls="stun:stun.l.google.com:19302")]
     )
 
-    # Check if TURN is configured. ENABLE_COTURN is the deployment's declared
-    # answer to "is there a TURN server?" — the same flag /health advertises to
-    # browsers — so the server side must respect it too, or it would try to
-    # relay through a TURN server the deployment says it doesn't have.
-    if not ENABLE_COTURN or not TURN_HOST:
-        if FORCE_TURN_RELAY:
-            # Fail loudly rather than silently degrading to STUN: relay-only was
-            # requested precisely because direct connectivity is known not to
-            # work, so an empty server list producing zero candidates is the
-            # honest outcome — but it needs to be diagnosable.
-            logger.error(
-                "FORCE_TURN_RELAY is on but no TURN server is configured "
-                f"(ENABLE_COTURN={ENABLE_COTURN}, TURN_HOST={TURN_HOST!r}). "
-                "Relay-only connections cannot succeed until TURN is configured."
-            )
-        return servers
-
-    # Use time-limited credentials if TURN_SECRET is configured (recommended)
-    if TURN_SECRET and user_id:
+    # Use time-limited credentials if valid TURN_SECRET is configured
+    if ENABLE_COTURN and TURN_SECRET and "change-in-production" not in str(TURN_SECRET) and "vercel.app" not in str(TURN_HOST) and user_id:
         try:
             credentials = generate_turn_credentials(user_id)
             servers.append(
@@ -283,43 +266,21 @@ def get_ice_servers(user_id: Optional[str] = None) -> List[RTCIceServer]:
         except Exception as e:
             logger.error(f"Failed to generate TURN credentials: {e}")
 
-    # Fallback to static credentials (legacy mode / OpenRelay TCP relay)
-    if not TURN_SECRET or "change-in-production" in str(TURN_SECRET) or "vercel.app" in str(TURN_HOST):
-        turn_username = os.getenv("TURN_USERNAME") or "openrelayproject"
-        turn_password = os.getenv("TURN_PASSWORD") or "openrelayproject"
-        host = clean_turn_host(TURN_HOST)
-        port = 80 if host == "relay.metered.ca" else TURN_PORT
-        servers.append(
-            RTCIceServer(
-                urls=[
-                    f"turn:{host}:{port}?transport=tcp",
-                    f"turn:{host}:{port}",
-                ],
-                username=turn_username,
-                credential=turn_password,
-            )
+    # Fallback to reliable public TURN over TCP (OpenRelay / Metered) for cloud environments (Render, etc.)
+    # Note: TCP over port 443/80 is required for Render Web Services which drop inbound UDP.
+    servers.append(
+        RTCIceServer(
+            urls=[
+                "turn:openrelay.metered.ca:443?transport=tcp",
+                "turn:openrelay.metered.ca:80?transport=tcp",
+                "turn:openrelay.metered.ca:443",
+                "turn:openrelay.metered.ca:80",
+            ],
+            username="openrelayproject",
+            credential="openrelayproject",
         )
-        return servers
-
-    turn_username = os.getenv("TURN_USERNAME")
-    turn_password = os.getenv("TURN_PASSWORD")
-
-    if turn_username and turn_password:
-        host = clean_turn_host(TURN_HOST)
-        servers.append(
-            RTCIceServer(
-                urls=[
-                    f"turn:{host}:{TURN_PORT}",
-                    f"turn:{host}:{TURN_PORT}?transport=tcp",
-                ],
-                username=turn_username,
-                credential=turn_password,
-            )
-        )
-        logger.warning(
-            f"TURN server configured with static credentials (consider using TURN_SECRET for time-limited auth)"
-        )
-
+    )
+    logger.info("Configured fallback TURN relay servers over TCP (openrelay.metered.ca:443)")
     return servers
 
 
@@ -331,15 +292,16 @@ class SignalingManager:
         self._peer_connections: Dict[str, SmallWebRTCConnection] = {}
         self._connection_peer_ids: Dict[str, Set[str]] = {}
         self._peer_connection_owners: Dict[str, str] = {}
-        # The pipeline runs detached, so without a done callback nothing ever
-        # retrieves its exception and asyncio reports it through the loop
-        # handler instead — unattributed, with no run id, and blamed on the
-        # operator. Holding the reference also keeps a running task from being
-        # collected, which asyncio does not guarantee on its own.
         self._pipeline_tasks: set[asyncio.Task] = set()
+        self._run_pipeline_tasks: Dict[int, asyncio.Task] = {}
 
     def _on_pipeline_task_done(self, task: asyncio.Task, workflow_run_id: int) -> None:
         self._pipeline_tasks.discard(task)
+        self._run_pipeline_tasks.pop(workflow_run_id, None)
+        try:
+            asyncio.create_task(call_concurrency.unregister_active_call(workflow_run_id))
+        except Exception:
+            pass
         if task.cancelled():
             return
         exc = task.exception()
@@ -495,6 +457,17 @@ class SignalingManager:
                         logger.debug(
                             f"Failed to disconnect peer connection {pc_id}: {e}"
                         )
+
+            # Cancel running pipeline task for this workflow run
+            task = self._run_pipeline_tasks.pop(workflow_run_id, None)
+            if task and not task.done():
+                task.cancel()
+
+            # Always unregister active call and release concurrency slot on disconnect
+            try:
+                await call_concurrency.unregister_active_call(workflow_run_id)
+            except Exception as e:
+                logger.debug(f"Failed to unregister active call for run {workflow_run_id}: {e}")
 
     async def _handle_message(
         self,
@@ -714,6 +687,14 @@ class SignalingManager:
                     owner_connection_id = self._forget_peer_connection(
                         webrtc_connection.pc_id
                     )
+                    task = self._run_pipeline_tasks.pop(workflow_run_id, None)
+                    if task and not task.done():
+                        task.cancel()
+                    try:
+                        await call_concurrency.unregister_active_call(workflow_run_id)
+                    except Exception as e:
+                        logger.debug(f"Failed to release call slot on closed: {e}")
+
                     if owner_connection_id == connection_key:
                         await self._notify_call_ended_and_close_websocket(
                             ws,
@@ -735,6 +716,7 @@ class SignalingManager:
                     )
                 )
                 self._pipeline_tasks.add(pipeline_task)
+                self._run_pipeline_tasks[workflow_run_id] = pipeline_task
                 pipeline_task.add_done_callback(
                     lambda task: self._on_pipeline_task_done(task, workflow_run_id)
                 )

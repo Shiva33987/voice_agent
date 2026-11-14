@@ -140,7 +140,7 @@ async def health() -> HealthResponse:
         tunnel_url=tunnel_url,
         deployment_mode=DEPLOYMENT_MODE,
         auth_provider=AUTH_PROVIDER,
-        turn_enabled=ENABLE_COTURN,
+        turn_enabled=True,
         force_turn_relay=FORCE_TURN_RELAY,
         signup_enabled=ENABLE_SIGNUP,
         stack_project_id=STACK_AUTH_PROJECT_ID if is_stack else None,

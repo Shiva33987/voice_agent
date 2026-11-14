@@ -64,7 +64,7 @@ EMBED_CORS_MAX_AGE = "86400"
 
 def _turn_credentials_available() -> bool:
     """Return whether the public endpoint can mint TURN credentials."""
-    return ENABLE_COTURN and bool(TURN_SECRET)
+    return True
 
 
 class InitEmbedRequest(BaseModel):
@@ -580,25 +580,28 @@ async def get_public_turn_credentials(
     if origin:
         _allow_embed_origin(response, origin)
 
-    # Check if TURN is configured. Both conditions matter: ENABLE_COTURN is what
-    # the config endpoint advertised, and without a secret there is nothing to
-    # sign credentials with.
-    if not _turn_credentials_available():
-        raise HTTPException(
-            status_code=503,
-            detail="TURN server not configured",
-        )
+    # Use time-limited credentials if custom Coturn is configured
+    if ENABLE_COTURN and TURN_SECRET and "change-in-production" not in str(TURN_SECRET) and "vercel.app" not in str(TURN_HOST):
+        try:
+            # Use session token as identifier for TURN credentials
+            credentials = generate_turn_credentials(f"embed:{session_token[:16]}")
+            return TurnCredentialsResponse(**credentials)
+        except Exception as e:
+            logger.error(f"Failed to generate TURN credentials for embed session: {e}")
 
-    try:
-        # Use session token as identifier for TURN credentials
-        credentials = generate_turn_credentials(f"embed:{session_token[:16]}")
-        return TurnCredentialsResponse(**credentials)
-    except Exception as e:
-        logger.error(f"Failed to generate TURN credentials for embed session: {e}")
-        raise HTTPException(
-            status_code=500,
-            detail="Failed to generate TURN credentials",
-        )
+    # Fallback to reliable public TURN over TCP (OpenRelay / Metered)
+    uris = [
+        "turn:openrelay.metered.ca:443?transport=tcp",
+        "turn:openrelay.metered.ca:80?transport=tcp",
+        "turn:openrelay.metered.ca:443",
+        "turn:openrelay.metered.ca:80",
+    ]
+    return TurnCredentialsResponse(
+        username="openrelayproject",
+        password="openrelayproject",
+        ttl=86400,
+        uris=uris,
+    )
 
 
 @router.options("/turn-credentials/{session_token}")

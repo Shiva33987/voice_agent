@@ -18,5 +18,17 @@ services:
         value: https://voice-agent-fawn-phi.vercel.app,https://inbound-agent.vercel.app,https://inbound-agent-git-main-sravanthi9.vercel.app,http://localhost:3000,http://localhost:3050
       - key: OSS_JWT_SECRET
         generateValue: true
+      - key: ENABLE_COTURN
+        value: "true"
+      - key: TURN_HOST
+        value: "openrelay.metered.ca"
+      - key: TURN_PORT
+        value: "443"
+      - key: TURN_USERNAME
+        value: "openrelayproject"
+      - key: TURN_PASSWORD
+        value: "openrelayproject"
+      - key: STALE_CALL_TIMEOUT
+        value: "180"
 
 
