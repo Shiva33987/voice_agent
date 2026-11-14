@@ -77,7 +77,9 @@ export function setupAuthInterceptor(apiClient: Client, getAccessToken: () => Pr
         }
         try {
             const token = await getAccessToken();
-            request.headers.set('Authorization', `Bearer ${token}`);
+            if (token && token.trim()) {
+                request.headers.set('Authorization', `Bearer ${token.trim()}`);
+            }
         } catch {
             // If token retrieval fails, let the request proceed without auth
         }

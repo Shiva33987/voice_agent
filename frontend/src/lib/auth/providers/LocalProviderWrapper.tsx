@@ -55,6 +55,19 @@ export function LocalProviderWrapper({ children }: { children: React.ReactNode }
       return 'ssr-placeholder-token';
     }
     if (!tokenRef.current) {
+      try {
+        const response = await fetch('/api/auth/oss');
+        if (response.ok) {
+          const data = await response.json();
+          if (data.token) {
+            tokenRef.current = data.token;
+            setUser(data.user);
+            return data.token;
+          }
+        }
+      } catch (error) {
+        logger.error('Error fetching token in getAccessToken', error);
+      }
       logger.warn('No OSS token available after initialization');
       return '';
     }
