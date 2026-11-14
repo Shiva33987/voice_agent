@@ -302,14 +302,15 @@ DEFAULT_CIRCUIT_BREAKER_CONFIG = {
 
 
 # Whether this deployment runs a TURN server (coturn).
-ENABLE_COTURN = os.getenv("ENABLE_COTURN", "false").lower() == "true"
+ENABLE_COTURN = os.getenv("ENABLE_COTURN", "true").lower() == "true"
 TURN_SECRET = os.getenv("TURN_SECRET")
-# Host browsers dial for TURN/ICE. Derives from PUBLIC_HOST; set explicitly only
-# when the TURN server runs on a separate host from the app.
-TURN_HOST = os.getenv("TURN_HOST") or PUBLIC_HOST or "localhost"
-TURN_PORT = int(os.getenv("TURN_PORT", "3478"))
+# Host browsers dial for TURN/ICE.
+TURN_HOST = os.getenv("TURN_HOST") or "relay.metered.ca"
+TURN_PORT = int(os.getenv("TURN_PORT", "80"))
 TURN_TLS_PORT = int(os.getenv("TURN_TLS_PORT", "5349"))
 TURN_CREDENTIAL_TTL = int(os.getenv("TURN_CREDENTIAL_TTL", "86400"))
+TURN_USERNAME = os.getenv("TURN_USERNAME", "openrelayproject")
+TURN_PASSWORD = os.getenv("TURN_PASSWORD", "openrelayproject")
 # Diagnostic flag: when true, strip all non-relay ICE candidates from the
 # answer SDP so every media path must traverse the TURN server. Use for
 # verifying TURN connectivity end-to-end; expect connection failures if

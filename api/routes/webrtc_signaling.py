@@ -283,7 +283,24 @@ def get_ice_servers(user_id: Optional[str] = None) -> List[RTCIceServer]:
         except Exception as e:
             logger.error(f"Failed to generate TURN credentials: {e}")
 
-    # Fallback to static credentials (legacy mode - not recommended for production)
+    # Fallback to static credentials (legacy mode / OpenRelay TCP relay)
+    if not TURN_SECRET or "change-in-production" in str(TURN_SECRET) or "vercel.app" in str(TURN_HOST):
+        turn_username = os.getenv("TURN_USERNAME") or "openrelayproject"
+        turn_password = os.getenv("TURN_PASSWORD") or "openrelayproject"
+        host = clean_turn_host(TURN_HOST)
+        port = 80 if host == "relay.metered.ca" else TURN_PORT
+        servers.append(
+            RTCIceServer(
+                urls=[
+                    f"turn:{host}:{port}?transport=tcp",
+                    f"turn:{host}:{port}",
+                ],
+                username=turn_username,
+                credential=turn_password,
+            )
+        )
+        return servers
+
     turn_username = os.getenv("TURN_USERNAME")
     turn_password = os.getenv("TURN_PASSWORD")
 

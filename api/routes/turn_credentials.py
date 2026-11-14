@@ -59,13 +59,15 @@ class TurnConfigResponse(BaseModel):
 def clean_turn_host(host: Optional[str]) -> str:
     """Sanitize TURN host by stripping protocols, ports, and trailing paths."""
     if not host:
-        return ""
+        return "relay.metered.ca"
     host = host.strip()
     if "://" in host:
         host = host.split("://", 1)[1]
     host = host.split("/")[0]
     if ":" in host:
         host = host.split(":")[0]
+    if host.endswith(".vercel.app") or "trycloudflare.com" in host or host in ("localhost", "127.0.0.1", ""):
+        return "relay.metered.ca"
     return host
 
 
@@ -167,31 +169,26 @@ async def get_turn_credentials(
             detail="TURN server not configured",
         )
 
-    if not TURN_SECRET:
-        turn_username = os.getenv("TURN_USERNAME")
-        turn_password = os.getenv("TURN_PASSWORD")
+    if not TURN_SECRET or "change-in-production" in str(TURN_SECRET) or "vercel.app" in str(TURN_HOST):
+        turn_username = os.getenv("TURN_USERNAME") or "openrelayproject"
+        turn_password = os.getenv("TURN_PASSWORD") or "openrelayproject"
         host = clean_turn_host(TURN_HOST)
-        if turn_username and turn_password and host:
-            uris = [
-                f"turn:{host}:{TURN_PORT}",
-                f"turn:{host}:{TURN_PORT}?transport=tcp",
-            ]
-            if TURN_TLS_PORT:
-                uris.extend([
-                    f"turns:{host}:{TURN_TLS_PORT}",
-                    f"turns:{host}:{TURN_TLS_PORT}?transport=tcp",
-                ])
-            logger.debug(f"Returning static TURN credentials for user {user.id}")
-            return TurnCredentialsResponse(
-                username=turn_username,
-                password=turn_password,
-                ttl=86400,
-                uris=uris,
-            )
-        logger.warning("TURN credentials requested but neither TURN_SECRET nor TURN_USERNAME/PASSWORD configured")
-        raise HTTPException(
-            status_code=503,
-            detail="TURN server not configured",
+        port = 80 if host == "relay.metered.ca" else TURN_PORT
+        uris = [
+            f"turn:{host}:{port}?transport=tcp",
+            f"turn:{host}:{port}",
+        ]
+        if TURN_TLS_PORT and host != "relay.metered.ca":
+            uris.extend([
+                f"turns:{host}:{TURN_TLS_PORT}",
+                f"turns:{host}:{TURN_TLS_PORT}?transport=tcp",
+            ])
+        logger.debug(f"Returning static TURN credentials for user {user.id}")
+        return TurnCredentialsResponse(
+            username=turn_username,
+            password=turn_password,
+            ttl=86400,
+            uris=uris,
         )
 
     try:
