@@ -248,6 +248,23 @@ def get_ice_servers(user_id: Optional[str] = None) -> List[RTCIceServer]:
         [] if FORCE_TURN_RELAY else [RTCIceServer(urls="stun:stun.l.google.com:19302")]
     )
 
+    # Check if TURN is configured. ENABLE_COTURN is the deployment's declared
+    # answer to "is there a TURN server?" — the same flag /health advertises to
+    # browsers — so the server side must respect it too, or it would try to
+    # relay through a TURN server the deployment says it doesn't have.
+    if not ENABLE_COTURN or not TURN_HOST:
+        if FORCE_TURN_RELAY:
+            # Fail loudly rather than silently degrading to STUN: relay-only was
+            # requested precisely because direct connectivity is known not to
+            # work, so an empty server list producing zero candidates is the
+            # honest outcome — but it needs to be diagnosable.
+            logger.error(
+                "FORCE_TURN_RELAY is on but no TURN server is configured "
+                f"(ENABLE_COTURN={ENABLE_COTURN}, TURN_HOST={TURN_HOST!r}). "
+                "Relay-only connections cannot succeed until TURN is configured."
+            )
+        return servers
+
     # Use time-limited credentials if valid TURN_SECRET is configured
     if ENABLE_COTURN and TURN_SECRET and "change-in-production" not in str(TURN_SECRET) and "vercel.app" not in str(TURN_HOST) and user_id:
         try:
@@ -266,19 +283,41 @@ def get_ice_servers(user_id: Optional[str] = None) -> List[RTCIceServer]:
         except Exception as e:
             logger.error(f"Failed to generate TURN credentials: {e}")
 
-    # Fallback to reliable public TURN over TCP/UDP (QuickBlox) for cloud environments (Render, etc.)
-    # Note: TCP over port 3478 is required for Render Web Services which drop inbound UDP.
-    servers.append(
-        RTCIceServer(
-            urls=[
-                "turn:turn.quickblox.com:3478?transport=tcp",
-                "turn:turn.quickblox.com:3478",
-            ],
-            username="quickblox",
-            credential="baccb97ba2d92d71e26eb9886da5f1e0",
+    # Fallback to reliable public TURN over TCP/UDP (QuickBlox) or custom static credentials
+    turn_username = os.getenv("TURN_USERNAME") or "quickblox"
+    turn_password = os.getenv("TURN_PASSWORD") or "baccb97ba2d92d71e26eb9886da5f1e0"
+    host = clean_turn_host(TURN_HOST)
+    if host in ("relay.metered.ca", "openrelay.metered.ca", "turn.quickblox.com") or not host:
+        servers.append(
+            RTCIceServer(
+                urls=[
+                    "turn:turn.quickblox.com:3478?transport=tcp",
+                    "turn:turn.quickblox.com:3478",
+                ],
+                username=turn_username,
+                credential=turn_password,
+            )
         )
-    )
-    logger.info("Configured fallback TURN relay servers over TCP (turn.quickblox.com:3478)")
+    else:
+        port = TURN_PORT or 3478
+        urls = [
+            f"turn:{host}:{port}?transport=tcp",
+            f"turn:{host}:{port}",
+        ]
+        if TURN_TLS_PORT:
+            urls.extend([
+                f"turns:{host}:{TURN_TLS_PORT}",
+                f"turns:{host}:{TURN_TLS_PORT}?transport=tcp",
+            ])
+        servers.append(
+            RTCIceServer(
+                urls=urls,
+                username=turn_username,
+                credential=turn_password,
+            )
+        )
+
+    logger.info("Configured fallback TURN relay servers")
     return servers
 
 
@@ -290,6 +329,11 @@ class SignalingManager:
         self._peer_connections: Dict[str, SmallWebRTCConnection] = {}
         self._connection_peer_ids: Dict[str, Set[str]] = {}
         self._peer_connection_owners: Dict[str, str] = {}
+        # The pipeline runs detached, so without a done callback nothing ever
+        # retrieves its exception and asyncio reports it through the loop
+        # handler instead — unattributed, with no run id, and blamed on the
+        # operator. Holding the reference also keeps a running task from being
+        # collected, which asyncio does not guarantee on its own.
         self._pipeline_tasks: set[asyncio.Task] = set()
         self._run_pipeline_tasks: Dict[int, asyncio.Task] = {}
 
