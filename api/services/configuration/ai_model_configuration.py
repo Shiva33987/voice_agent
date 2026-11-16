@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import time
 from dataclasses import dataclass
 from typing import Literal
 
@@ -16,6 +17,19 @@ AIModelConfigurationSource = Literal["organization_v3", "empty"]
 # as audit data; no code reads it, and saves drop it.
 WORKFLOW_MODEL_CONFIGURATION_V2_OVERRIDE_KEY = "model_configuration_v2_override"
 
+_RESOLVED_CONFIG_CACHE: dict[int, tuple[float, ResolvedAIModelConfiguration]] = {}
+_CONFIG_CACHE_TTL: float = 60.0
+
+
+def clear_resolved_ai_model_configuration_cache(
+    organization_id: int | None = None,
+) -> None:
+    """Invalidate in-memory cache for an organization or all organizations."""
+    if organization_id is None:
+        _RESOLVED_CONFIG_CACHE.clear()
+    else:
+        _RESOLVED_CONFIG_CACHE.pop(organization_id, None)
+
 
 @dataclass
 class ResolvedAIModelConfiguration:
@@ -29,6 +43,11 @@ async def get_resolved_ai_model_configuration(
 ) -> ResolvedAIModelConfiguration:
     """Resolve the organization's default configuration, or an empty one."""
     if organization_id is not None:
+        now = time.time()
+        cached = _RESOLVED_CONFIG_CACHE.get(organization_id)
+        if cached is not None and (now - cached[0]) < _CONFIG_CACHE_TTL:
+            return cached[1]
+
         from api.services.configuration.model_connections import (
             get_default_model_configuration,
             resolve_model_configuration,
@@ -39,9 +58,11 @@ async def get_resolved_ai_model_configuration(
             resolved = await resolve_model_configuration(
                 organization_id, default_row=default
             )
-            return ResolvedAIModelConfiguration(
+            result = ResolvedAIModelConfiguration(
                 effective=resolved.effective, source="organization_v3"
             )
+            _RESOLVED_CONFIG_CACHE[organization_id] = (now, result)
+            return result
     return ResolvedAIModelConfiguration(
         effective=EffectiveAIModelConfiguration(), source="empty"
     )

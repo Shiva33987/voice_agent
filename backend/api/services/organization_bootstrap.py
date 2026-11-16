@@ -13,6 +13,7 @@ what makes a failed attempt retryable; the lease is what keeps the retry from
 racing itself.
 """
 
+import asyncio
 from datetime import timedelta
 
 from loguru import logger
@@ -42,23 +43,39 @@ _CATALOG_DEFAULT_KEY = (
 )
 
 
+_BOOTSTRAPPED_USERS: set[str] = set()
+
+
 async def ensure_organization_bootstrapped(
     organization_id: int,
     *,
     created_by: str,
 ) -> bool:
     """Ensure upstream MPS service key is minted for OSS workflow creation, but do not create Dograh provider connections."""
+    cache_key = f"{organization_id}:{created_by}"
+    if cache_key in _BOOTSTRAPPED_USERS:
+        return True
+
+    _BOOTSTRAPPED_USERS.add(cache_key)
+
+    async def _mint():
+        try:
+            if created_by:
+                await mps_service_key_client.create_service_key(
+                    name=MANAGED_SERVICE_KEY_NAME,
+                    description="Auto-generated key for OSS user",
+                    organization_id=(None if AUTH_PROVIDER == "local" else organization_id),
+                    created_by=created_by,
+                    expires_in_days=90,
+                )
+        except Exception as e:
+            logger.debug(f"MPS service key pre-provisioning for {created_by} caught: {e}")
+
     try:
-        if created_by:
-            await mps_service_key_client.create_service_key(
-                name=MANAGED_SERVICE_KEY_NAME,
-                description="Auto-generated key for OSS user",
-                organization_id=(None if AUTH_PROVIDER == "local" else organization_id),
-                created_by=created_by,
-                expires_in_days=90,
-            )
-    except Exception as e:
-        logger.warning(f"MPS service key pre-provisioning for {created_by} caught: {e}")
+        asyncio.create_task(_mint())
+    except Exception:
+        pass
+
     return True
     try:
         state = await db_client.get_configuration_values(

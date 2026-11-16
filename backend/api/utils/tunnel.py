@@ -2,10 +2,16 @@
 
 import asyncio
 import re
+import time
 from typing import Optional
 
 import aiohttp
 from loguru import logger
+
+
+_last_tunnel_check: float = 0.0
+_cached_tunnel_urls: Optional[tuple[str, str]] = None
+_TUNNEL_CACHE_TTL: float = 30.0
 
 
 class TunnelURLProvider:
@@ -44,6 +50,13 @@ class TunnelURLProvider:
         Returns:
             Optional[tuple[str, str]]: (https_url, wss_url) with full protocols, or None if not found
         """
+        global _last_tunnel_check, _cached_tunnel_urls
+
+        now = time.time()
+        if _last_tunnel_check > 0 and (now - _last_tunnel_check) < _TUNNEL_CACHE_TTL:
+            return _cached_tunnel_urls
+
+        _last_tunnel_check = now
         try:
             # Try to connect to cloudflared metrics endpoint
             # The service name in docker-compose is 'cloudflared'
@@ -70,7 +83,8 @@ class TunnelURLProvider:
                         hostname = hostname.replace("https://", "").replace(
                             "wss://", ""
                         )
-                        return "https://" + hostname, "wss://" + hostname
+                        _cached_tunnel_urls = ("https://" + hostname, "wss://" + hostname)
+                        return _cached_tunnel_urls
 
                     # Alternative: Look for trycloudflare.com domain
                     match = re.search(r"([a-z0-9-]+\.trycloudflare\.com)", text)
@@ -79,7 +93,8 @@ class TunnelURLProvider:
                         hostname = hostname.replace("https://", "").replace(
                             "wss://", ""
                         )
-                        return f"https://{hostname}", f"wss://{hostname}"
+                        _cached_tunnel_urls = (f"https://{hostname}", f"wss://{hostname}")
+                        return _cached_tunnel_urls
 
                     logger.warning("Could not find tunnel URL in cloudflared metrics")
                     return None

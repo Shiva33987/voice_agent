@@ -721,27 +721,35 @@ export const useWebSocketRTC = ({ workflowId, workflowRunId, accessToken, initia
         setConnectionStatus('connecting');
 
         try {
-            // Fetch TURN credentials from backend API
-            try {
-                const turnResponse = await getTurnCredentialsApiV1TurnCredentialsGet({
+            // Fetch TURN credentials, validate user config, and validate workflow concurrently in parallel
+            const [turnResponse, response, workflowResponse] = await Promise.all([
+                getTurnCredentialsApiV1TurnCredentialsGet({
                     headers: {
                         'Authorization': `Bearer ${accessToken}`,
                     },
-                });
-                if (turnResponse.data?.uris && turnResponse.data.uris.length > 0) {
-                    turnCredentialsRef.current = turnResponse.data;
-                    logger.info(`TURN credentials obtained, TTL: ${turnResponse.data.ttl}s`);
-                }
-            } catch (e) {
-                logger.warn('Failed to fetch TURN credentials from backend, fallback relay will be used:', e);
-            }
+                }).catch((e) => {
+                    logger.warn('Failed to fetch TURN credentials from backend, fallback relay will be used:', e);
+                    return { data: null, error: e, response: null };
+                }),
+                validateUserConfigurationsApiV1UserConfigurationsUserValidateGet({
+                    headers: {
+                        'Authorization': `Bearer ${accessToken}`,
+                    },
+                }),
+                validateWorkflowApiV1WorkflowWorkflowIdValidatePost({
+                    path: {
+                        workflow_id: workflowId,
+                    },
+                    headers: {
+                        'Authorization': `Bearer ${accessToken}`,
+                    },
+                }),
+            ]);
 
-            // Validate API keys
-            const response = await validateUserConfigurationsApiV1UserConfigurationsUserValidateGet({
-                headers: {
-                    'Authorization': `Bearer ${accessToken}`,
-                },
-            });
+            if (turnResponse.data?.uris && turnResponse.data.uris.length > 0) {
+                turnCredentialsRef.current = turnResponse.data;
+                logger.info(`TURN credentials obtained, TTL: ${turnResponse.data.ttl}s`);
+            }
 
             if (response.error) {
                 const isServiceUnavailable = response.response?.status === 503;
@@ -769,16 +777,6 @@ export const useWebSocketRTC = ({ workflowId, workflowRunId, accessToken, initia
                 setConnectionStatus('failed');
                 return;
             }
-
-            // Validate workflow
-            const workflowResponse = await validateWorkflowApiV1WorkflowWorkflowIdValidatePost({
-                path: {
-                    workflow_id: workflowId,
-                },
-                headers: {
-                    'Authorization': `Bearer ${accessToken}`,
-                },
-            });
 
             if (workflowResponse.error) {
                 setWorkflowConfigModalOpen(true);
