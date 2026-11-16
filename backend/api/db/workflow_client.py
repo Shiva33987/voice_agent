@@ -1,8 +1,9 @@
+import copy
+import time
 from datetime import UTC, datetime
 from typing import Optional
 
 from loguru import logger
-from sqlalchemy import func, update
 from sqlalchemy import delete, func, update
 from sqlalchemy.future import select
 from sqlalchemy.orm import load_only, selectinload
@@ -16,6 +17,9 @@ from api.db.models import (
     WorkflowModel,
     WorkflowRunModel,
 )
+
+_WORKFLOW_CACHE: dict[tuple[int, int | None, int | None], tuple[float, WorkflowModel]] = {}
+_WORKFLOW_CACHE_TTL = 30.0  # seconds
 
 
 class WorkflowClient(BaseDBClient):
@@ -297,6 +301,7 @@ class WorkflowClient(BaseDBClient):
                 await session.rollback()
                 raise e
             await session.refresh(draft)
+            _WORKFLOW_CACHE.clear()
         return draft
 
     async def publish_workflow_draft(
@@ -374,6 +379,7 @@ class WorkflowClient(BaseDBClient):
                 await session.rollback()
                 raise e
             await session.refresh(draft)
+            _WORKFLOW_CACHE.clear()
         return draft
 
     async def discard_workflow_draft(
@@ -462,6 +468,7 @@ class WorkflowClient(BaseDBClient):
                 await session.rollback()
                 raise e
             await session.refresh(draft)
+            _WORKFLOW_CACHE.clear()
         return draft
 
     async def get_draft_version(
@@ -669,6 +676,13 @@ class WorkflowClient(BaseDBClient):
                 "for tenant scoping; use get_workflow_by_id for unscoped "
                 "system lookups."
             )
+        cache_key = (workflow_id, organization_id, user_id)
+        now = time.time()
+        if cache_key in _WORKFLOW_CACHE:
+            exp, cached_wf = _WORKFLOW_CACHE[cache_key]
+            if now < exp:
+                return copy.copy(cached_wf)
+
         async with self.async_session() as session:
             query = (
                 select(WorkflowModel)
@@ -687,7 +701,12 @@ class WorkflowClient(BaseDBClient):
                 query = query.where(WorkflowModel.user_id == user_id)
 
             result = await session.execute(query)
-            return result.scalars().first()
+            wf = result.scalars().first()
+            if wf:
+                session.expunge(wf)
+                _WORKFLOW_CACHE[cache_key] = (now + _WORKFLOW_CACHE_TTL, wf)
+                return copy.copy(wf)
+            return None
 
     async def get_workflow_by_id(self, workflow_id: int) -> WorkflowModel | None:
         """Fetch a workflow by id WITHOUT tenant scoping.

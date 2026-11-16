@@ -2,6 +2,7 @@
 
 import secrets
 import string
+import time
 from typing import List, Optional
 
 from loguru import logger
@@ -10,6 +11,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from api.db.base_client import BaseDBClient
 from api.db.models import WorkflowRecordingModel
+
+_ACTIVE_RECORDINGS_CACHE: dict[int, tuple[float, bool]] = {}
+_ACTIVE_RECORDINGS_CACHE_TTL = 60.0  # seconds
 
 
 def generate_short_id(length: int = 8) -> str:
@@ -191,6 +195,12 @@ class WorkflowRecordingClient(BaseDBClient):
         Returns:
             True if at least one active recording exists, False otherwise
         """
+        now = time.time()
+        if organization_id in _ACTIVE_RECORDINGS_CACHE:
+            exp, has_active = _ACTIVE_RECORDINGS_CACHE[organization_id]
+            if now < exp:
+                return has_active
+
         async with self.async_session() as session:
             query = (
                 select(func.count())
@@ -201,7 +211,9 @@ class WorkflowRecordingClient(BaseDBClient):
                 )
             )
             result = await session.execute(query)
-            return result.scalar_one() > 0
+            has_active = result.scalar_one() > 0
+            _ACTIVE_RECORDINGS_CACHE[organization_id] = (now + _ACTIVE_RECORDINGS_CACHE_TTL, has_active)
+            return has_active
 
     async def check_recording_id_exists(
         self, recording_id: str, organization_id: int

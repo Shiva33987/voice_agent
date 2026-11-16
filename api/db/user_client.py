@@ -1,3 +1,5 @@
+import copy
+import time
 import uuid
 from datetime import datetime, timezone
 
@@ -7,6 +9,9 @@ from sqlalchemy.future import select
 
 from api.db.base_client import BaseDBClient
 from api.db.models import UserConfigurationModel, UserModel
+
+_USER_CACHE: dict[int, tuple[float, UserModel]] = {}
+_USER_CACHE_TTL = 60.0  # seconds
 
 
 class UserClient(BaseDBClient):
@@ -55,11 +60,22 @@ class UserClient(BaseDBClient):
 
     async def get_user_by_id(self, user_id: int) -> UserModel | None:
         """Fetch a user by their internal ID."""
+        now = time.time()
+        if user_id in _USER_CACHE:
+            exp, cached_user = _USER_CACHE[user_id]
+            if now < exp:
+                return copy.copy(cached_user)
+
         async with self.async_session() as session:
             result = await session.execute(
                 select(UserModel).where(UserModel.id == user_id)
             )
-            return result.scalars().first()
+            user = result.scalars().first()
+            if user:
+                session.expunge(user)
+                _USER_CACHE[user_id] = (now + _USER_CACHE_TTL, user)
+                return copy.copy(user)
+            return None
 
     async def _get_user_configuration_row(
         self, session, user_id: int, key: str
@@ -120,6 +136,7 @@ class UserClient(BaseDBClient):
             if result.rowcount == 0:
                 raise ValueError(f"User with ID {user_id} not found")
 
+            _USER_CACHE.pop(user_id, None)
             await session.commit()
 
     async def update_user_email(self, user_id: int, email: str) -> None:
@@ -133,6 +150,7 @@ class UserClient(BaseDBClient):
                 .values(email=email.lower())
             )
             await session.execute(stmt)
+            _USER_CACHE.pop(user_id, None)
             await session.commit()
 
     async def get_user_by_email(self, email: str) -> UserModel | None:

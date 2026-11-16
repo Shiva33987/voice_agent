@@ -679,7 +679,7 @@ class SmallWebRTCConnection(BaseObject):
         if self._last_received_time is None:
             # if we have never received a message, it is probably because the client has not created a data channel
             # so we are going to trust aiortc in this case
-            return self._pc.connectionState == "connected"
+            return self._pc.connectionState == "connected" or getattr(self._pc, "iceConnectionState", None) in ("connected", "completed")
         # Checks if the last received ping was within the last 3 seconds.
         return (time.time() - self._last_received_time) < 3
 

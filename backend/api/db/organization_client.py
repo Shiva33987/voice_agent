@@ -1,3 +1,4 @@
+import time
 from datetime import datetime, timezone
 from typing import Optional
 
@@ -13,6 +14,9 @@ from api.db.models import (
     organization_users_association,
 )
 from api.utils.api_key import generate_api_key
+
+_ORG_MEMBERSHIP_CACHE: dict[tuple[int, int], tuple[float, bool]] = {}
+_ORG_MEMBERSHIP_CACHE_TTL = 60.0  # seconds
 
 
 class OrganizationClient(BaseDBClient):
@@ -113,6 +117,13 @@ class OrganizationClient(BaseDBClient):
         self, user_id: int, organization_id: int
     ) -> bool:
         """Return True if the user belongs to the given organization."""
+        cache_key = (user_id, organization_id)
+        now = time.time()
+        if cache_key in _ORG_MEMBERSHIP_CACHE:
+            exp, is_member = _ORG_MEMBERSHIP_CACHE[cache_key]
+            if now < exp:
+                return is_member
+
         async with self.async_session() as session:
             result = await session.execute(
                 select(
@@ -125,7 +136,9 @@ class OrganizationClient(BaseDBClient):
                     )
                 )
             )
-            return bool(result.scalar())
+            is_member = bool(result.scalar())
+            _ORG_MEMBERSHIP_CACHE[cache_key] = (now + _ORG_MEMBERSHIP_CACHE_TTL, is_member)
+            return is_member
 
     async def add_user_to_organization(
         self, user_id: int, organization_id: int
@@ -135,6 +148,7 @@ class OrganizationClient(BaseDBClient):
         The association is created only if it does not already exist.
         Uses INSERT ... ON CONFLICT DO NOTHING to handle race conditions.
         """
+        _ORG_MEMBERSHIP_CACHE.pop((user_id, organization_id), None)
         async with self.async_session() as session:
             # Use PostgreSQL's INSERT ... ON CONFLICT DO NOTHING
             # This handles race conditions at the database level

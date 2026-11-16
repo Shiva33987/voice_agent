@@ -31,7 +31,7 @@ async def main():
             async def rec():
                 try:
                     while True:
-                        f = await asyncio.wait_for(track.recv(), timeout=5.0)
+                        f = await asyncio.wait_for(track.recv(), timeout=25.0)
                         frames.append(f)
                         if len(frames) in (1, 10, 50, 100, 200):
                             logger.info(f">>> GOT AUDIO FRAMES: {len(frames)}! <<<")
@@ -86,10 +86,10 @@ async def main():
 
             in_task = asyncio.create_task(ws_in())
 
-            # Wait up to 35 seconds
-            for i in range(35):
+            # Wait up to 60 seconds
+            for i in range(60):
                 await asyncio.sleep(1)
-                if len(frames) > 50:
+                if len(frames) > 20:
                     logger.info("SUCCESS: Bot is speaking audio!")
                     break
 

@@ -500,12 +500,15 @@ class SmallWebRTCClient:
         self._audio_in_resampler = AudioResampler(
             "s16", self._audio_in_layout, self._in_sample_rate
         )
+        if self._webrtc_connection.is_connected() and self._audio_output_track is None:
+            await self._handle_client_connected()
 
     @acquires("connection")
     async def connect(self):
         """Establish the WebRTC connection."""
         if self._webrtc_connection.is_connected():
-            # already initialized
+            if self._audio_output_track is None and self._params is not None:
+                await self._handle_client_connected()
             return
 
         logger.info("Connecting to Small WebRTC")

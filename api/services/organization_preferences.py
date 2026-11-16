@@ -1,3 +1,4 @@
+import time
 from inspect import isawaitable
 
 from loguru import logger
@@ -17,6 +18,9 @@ from api.services.observability.call_events.configuration import (
     resolve_settings,
 )
 
+_PREFERENCES_CACHE: dict[int, tuple[float, OrganizationPreferences]] = {}
+_PREFERENCES_CACHE_TTL = 60.0  # seconds
+
 
 async def get_organization_preferences(
     organization_id: int | None,
@@ -24,6 +28,12 @@ async def get_organization_preferences(
 ) -> OrganizationPreferences:
     if organization_id is None:
         return OrganizationPreferences()
+
+    now = time.time()
+    if organization_id in _PREFERENCES_CACHE:
+        exp, pref = _PREFERENCES_CACHE[organization_id]
+        if now < exp:
+            return pref
 
     db = db or db_client
     row = await _get_configuration(
@@ -37,13 +47,16 @@ async def get_organization_preferences(
             organization_id,
             OrganizationConfigurationKey.MODEL_CONFIGURATION_PREFERENCES.value,
         )
-    return _parse_preferences(row.value if row is not None else None, organization_id)
+    parsed = _parse_preferences(row.value if row is not None else None, organization_id)
+    _PREFERENCES_CACHE[organization_id] = (now + _PREFERENCES_CACHE_TTL, parsed)
+    return parsed
 
 
 async def upsert_organization_preferences(
     organization_id: int,
     preferences: OrganizationPreferences,
 ) -> OrganizationPreferences:
+    _PREFERENCES_CACHE.pop(organization_id, None)
     await db_client.upsert_configuration(
         organization_id,
         OrganizationConfigurationKey.ORGANIZATION_PREFERENCES.value,
