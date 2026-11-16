@@ -200,6 +200,7 @@ export function WorkflowTesterPanel({
                             />
                         ) : voiceRunId ? (
                             <EmbeddedVoiceTester
+                                key={voiceRunId}
                                 workflowId={workflowId}
                                 workflowRunId={voiceRunId}
                                 initialContextVariables={initialContextVariables}

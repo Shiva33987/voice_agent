@@ -60,6 +60,13 @@ export function EmbeddedVoiceTester({
     });
     const autoStartedRef = useRef(false);
     const configRetriedRef = useRef(false);
+    const lastRunIdRef = useRef(workflowRunId);
+
+    if (lastRunIdRef.current !== workflowRunId) {
+        lastRunIdRef.current = workflowRunId;
+        autoStartedRef.current = false;
+        configRetriedRef.current = false;
+    }
 
     useEffect(() => {
         // Wait for appConfig (FORCE_TURN_RELAY) to finish loading before
@@ -129,16 +136,12 @@ export function EmbeddedVoiceTester({
             stop();
             return;
         }
-        if (isCompleted) {
+        if (isCompleted || connectionStatus === "failed") {
             if (onStartAnotherTest) {
                 onStartAnotherTest();
             } else {
                 onReset();
             }
-            return;
-        }
-        if (connectionStatus === "failed") {
-            await start();
             return;
         }
         if (configUnreachable) {

@@ -448,7 +448,8 @@ class SignalingManager:
         allow_client_context_vars: bool = True,
     ):
         """Handle WebSocket connection for signaling."""
-        await websocket.accept()
+        if websocket.application_state != WebSocketState.CONNECTED:
+            await websocket.accept()
         connection_id = f"{workflow_id}:{workflow_run_id}:{user.id}"
         connection_key = f"{connection_id}:{id(websocket)}"
         self._connections[connection_key] = websocket
@@ -884,8 +885,20 @@ async def signaling_websocket(
     user: UserModel = Depends(get_user_ws),
 ):
     """WebSocket endpoint for WebRTC signaling with ICE trickling."""
+    await websocket.accept()
+
     if not user.selected_organization_id:
-        raise HTTPException(status_code=400, detail="No organization selected")
+        await websocket.send_json(
+            {
+                "type": "error",
+                "payload": {
+                    "error_type": "no_organization_selected",
+                    "message": "No organization selected",
+                },
+            }
+        )
+        await websocket.close(code=1008, reason="No organization selected")
+        return
 
     workflow_run = await db_client.get_workflow_run(
         workflow_run_id, organization_id=user.selected_organization_id
@@ -895,13 +908,49 @@ async def signaling_websocket(
             f"workflow run {workflow_run_id} not found for org "
             f"{user.selected_organization_id}"
         )
-        raise HTTPException(status_code=400, detail="Bad workflow_run_id")
+        await websocket.send_json(
+            {
+                "type": "error",
+                "payload": {
+                    "error_type": "bad_workflow_run_id",
+                    "message": f"Workflow run {workflow_run_id} not found",
+                },
+            }
+        )
+        await websocket.close(code=1008, reason="Bad workflow_run_id")
+        return
     if workflow_run.workflow_id != workflow_id:
         logger.warning(
             f"workflow run {workflow_run_id} belongs to workflow "
             f"{workflow_run.workflow_id}, not {workflow_id}"
         )
-        raise HTTPException(status_code=400, detail="workflow_run_workflow_mismatch")
+        await websocket.send_json(
+            {
+                "type": "error",
+                "payload": {
+                    "error_type": "workflow_run_workflow_mismatch",
+                    "message": "Workflow run does not match workflow",
+                },
+            }
+        )
+        await websocket.close(code=1008, reason="workflow_run_workflow_mismatch")
+        return
+
+    if workflow_run.is_completed:
+        logger.info(
+            f"Rejecting already completed workflow run {workflow_run_id} on connect"
+        )
+        await websocket.send_json(
+            {
+                "type": "error",
+                "payload": {
+                    "error_type": "workflow_run_already_completed",
+                    "message": "This test run has already finished. Start a new test to try again.",
+                },
+            }
+        )
+        await websocket.close(code=1000, reason="call ended")
+        return
 
     await signaling_manager.handle_websocket(
         websocket,
